@@ -2,7 +2,7 @@ package eu.davidea.flexibleadapter.common;
 
 import android.content.Context;
 import android.graphics.PointF;
-import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.DisplayMetrics;
@@ -11,17 +11,25 @@ import android.util.DisplayMetrics;
  * @see <a href="http://stackoverflow.com/questions/26875061/scroll-recyclerview-to-show-selected-item-on-top">
  *     stackoverflow.com/.../scroll-recyclerview-to-show-selected-item-on-top</a>
  */
-public class SmoothScrollLinearLayoutManager extends LinearLayoutManager {
+public class SmoothScrollLayoutManager extends GridLayoutManager {
 
-//	private static final String TAG = SmoothScrollLinearLayoutManager.class.getSimpleName();
+//	private static final String TAG = SmoothScrollLayoutManager.class.getSimpleName();
 	private static final float MILLISECONDS_PER_INCH = 100f;
 
-	public SmoothScrollLinearLayoutManager(Context context) {
-		this(context, VERTICAL, false);
+	public SmoothScrollLayoutManager(Context context) {
+		this(context, VERTICAL);
 	}
 
-	public SmoothScrollLinearLayoutManager(Context context, int orientation, boolean reverseLayout) {
-		super(context, orientation, reverseLayout);
+	public SmoothScrollLayoutManager(Context context, int orientation) {
+		super(context, 1, orientation, false);
+	}
+
+	public SmoothScrollLayoutManager(Context context, int orientation, boolean reverseLayout) {
+		super(context, 1, orientation, reverseLayout);
+	}
+
+	public SmoothScrollLayoutManager(Context context, int spanCount, int orientation, boolean reverseLayout) {
+		super(context, spanCount, orientation, reverseLayout);
 	}
 
 	@Override
@@ -51,7 +59,7 @@ public class SmoothScrollLinearLayoutManager extends LinearLayoutManager {
 
 		@Override
 		public PointF computeScrollVectorForPosition(int targetPosition) {
-			return SmoothScrollLinearLayoutManager.this
+			return SmoothScrollLayoutManager.this
 					.computeScrollVectorForPosition(targetPosition);
 		}
 

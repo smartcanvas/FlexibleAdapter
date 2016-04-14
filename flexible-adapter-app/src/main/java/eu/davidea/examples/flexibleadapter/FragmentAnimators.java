@@ -14,7 +14,7 @@ import android.view.ViewGroup;
 import eu.davidea.examples.flexibleadapter.services.DatabaseService;
 import eu.davidea.fastscroller.FastScroller;
 import eu.davidea.flexibleadapter.common.DividerItemDecoration;
-import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager;
+import eu.davidea.flexibleadapter.common.SmoothScrollLayoutManager;
 import eu.davidea.flipview.FlipView;
 import eu.davidea.utils.Utils;
 
@@ -93,7 +93,7 @@ public class FragmentAnimators extends Fragment {
 		mAdapter.setRemoveOrphanHeaders(false);
 		mAdapter.setUnlinkAllItemsOnRemoveHeaders(false);
 		mRecyclerView = (RecyclerView) getView().findViewById(R.id.recycler_view);
-		mRecyclerView.setLayoutManager(new SmoothScrollLinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
+		mRecyclerView.setLayoutManager(new SmoothScrollLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
 		mRecyclerView.setAdapter(mAdapter);
 		mRecyclerView.setHasFixedSize(true); //Size of RV will not change
 		mRecyclerView.setItemAnimator(new DefaultItemAnimator() {

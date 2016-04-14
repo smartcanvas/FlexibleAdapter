@@ -43,7 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager;
+import eu.davidea.flexibleadapter.common.SmoothScrollLayoutManager;
 import eu.davidea.flexibleadapter.helpers.ItemTouchHelperCallback;
 import eu.davidea.flexibleadapter.helpers.StickyHeaderHelper;
 import eu.davidea.flexibleadapter.items.IExpandable;
@@ -1087,7 +1087,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	/**
 	 * Automatically scroll the clicked expandable item to the first visible position.<br/>
 	 * Default disabled.
-	 * <p>This works ONLY in combination with {@link SmoothScrollLinearLayoutManager}.
+	 * <p>This works ONLY in combination with {@link SmoothScrollLayoutManager}.
 	 * GridLayout is still NOT supported.</p>
 	 *
 	 * @param scrollOnExpand true to enable automatic scroll, false to disable

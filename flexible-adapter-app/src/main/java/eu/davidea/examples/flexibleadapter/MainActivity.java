@@ -43,7 +43,7 @@ import eu.davidea.examples.flexibleadapter.models.SubItem;
 import eu.davidea.examples.flexibleadapter.services.DatabaseService;
 import eu.davidea.fastscroller.FastScroller;
 import eu.davidea.flexibleadapter.FlexibleAdapter;
-import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager;
+import eu.davidea.flexibleadapter.common.SmoothScrollLayoutManager;
 import eu.davidea.flexibleadapter.items.AbstractFlexibleItem;
 import eu.davidea.flexibleadapter.items.IExpandable;
 import eu.davidea.flexibleadapter.items.IFlexible;
@@ -426,7 +426,7 @@ public class MainActivity extends AppCompatActivity implements
 		int id = item.getItemId();
 		if (id == R.id.action_list_type) {
 			if (mRecyclerView.getLayoutManager() instanceof GridLayoutManager) {
-				mRecyclerView.setLayoutManager(new SmoothScrollLinearLayoutManager(this));
+				mRecyclerView.setLayoutManager(new SmoothScrollLayoutManager(this));
 				item.setIcon(R.drawable.ic_view_grid_white_24dp);
 				item.setTitle(R.string.grid_layout);
 			} else {
