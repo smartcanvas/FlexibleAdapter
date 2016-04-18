@@ -26,6 +26,7 @@ import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -43,7 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import eu.davidea.flexibleadapter.common.SmoothScrollLayoutManager;
+import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager;
 import eu.davidea.flexibleadapter.helpers.ItemTouchHelperCallback;
 import eu.davidea.flexibleadapter.helpers.StickyHeaderHelper;
 import eu.davidea.flexibleadapter.items.IExpandable;
@@ -197,6 +198,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	 *                  <br/>- {@link OnItemLongClickListener}
 	 *                  <br/>- {@link OnItemMoveListener}
 	 *                  <br/>- {@link OnItemSwipeListener}
+	 *                  <br/>- {@link OnStickyHeaderChangeListener}
 	 */
 	public FlexibleAdapter(@NonNull List<T> items, @Nullable Object listeners) {
 		mItems = Collections.synchronizedList(items);
@@ -253,8 +255,6 @@ public class FlexibleAdapter<T extends IFlexible>
 		multiRange = true;
 		while (position < mItems.size()) {
 			T item = getItem(position);
-			//Map the view type if not done yet
-			//mapViewTypeFrom(item);
 			if (isExpandable(item)) {
 				IExpandable expandable = (IExpandable) item;
 				if (expandable.isExpanded()) {
@@ -588,23 +588,6 @@ public class FlexibleAdapter<T extends IFlexible>
 	}
 
 	/**
-	 * Enables the sticky header functionality. Adds {@link StickyHeaderDecoration} to the
-	 * RecyclerView.
-	 * <p>Headers can be sticky only if they are shown. Command is otherwise ignored!</p>
-	 * <b>NOTE:</b> Sticky headers cannot be dragged, swiped, moved nor deleted. They, instead,
-	 * are automatically re-linked if the linked Sectionable item is different.
-	 *
-	 * @param maxCachedHeaders the max view instances to keep in the cache. This number depends by
-	 *                         how many headers are normally displayed in the RecyclerView. It
-	 *                         depends by the specific use case.
-	 * @deprecated Use {@link #enableStickyHeaders()} instead.
-	 */
-	@Deprecated
-	public void enableStickyHeaders(int maxCachedHeaders) {
-		setStickyHeaders(true);
-	}
-
-	/**
 	 * Enables the sticky header functionality.
 	 * <p>Headers can be sticky only if they are shown. Command is otherwise ignored!</p>
 	 * <b>NOTE:</b>
@@ -738,26 +721,6 @@ public class FlexibleAdapter<T extends IFlexible>
 			if (isHeader(getItem(i))) sectionIndex++;
 		}
 		return sectionIndex;
-	}
-
-	/**
-	 * Provides the item that holds the specified header.
-	 * <p>The Sectionable is searched starting from Header position -1 to Header position +2.</p>
-	 *
-	 * @param header the header
-	 * @return the Sectionable of the passed header if found, null otherwise
-	 * @deprecated wrong implementation, use {@link #getSectionItems(IHeader)} instead
-	 */
-	@Deprecated
-	public ISectionable getSectionableOf(@NonNull IHeader header) {
-		int headerPosition = getGlobalPositionOf(header);
-		for (int position = headerPosition - 1; position <= headerPosition + 2; position++) {
-			IHeader realHeader = getHeaderOf(getItem(position));//This will also return null in case of OutOfBounds!
-			if (realHeader != null && realHeader.equals(header)) {
-				return (ISectionable) getItem(position);
-			}
-		}
-		return null;
 	}
 
 	/**
@@ -1087,7 +1050,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	/**
 	 * Automatically scroll the clicked expandable item to the first visible position.<br/>
 	 * Default disabled.
-	 * <p>This works ONLY in combination with {@link SmoothScrollLayoutManager}.
+	 * <p>This works ONLY in combination with {@link SmoothScrollLinearLayoutManager}.
 	 * GridLayout is still NOT supported.</p>
 	 *
 	 * @param scrollOnExpand true to enable automatic scroll, false to disable
@@ -1251,8 +1214,9 @@ public class FlexibleAdapter<T extends IFlexible>
 				" expanded " + expandable.isExpanded() + " ExpandedItems=" + getExpandedPositions());
 
 		int subItemsCount = 0;
-		if (!expandable.isExpanded() && (!parentSelected || expandable.getExpansionLevel() <= selectedLevel)
-				&& hasSubItems(expandable)) {
+		if (!expandable.isExpanded() && hasSubItems(expandable)
+				&& (!parentSelected || expandable.getExpansionLevel() <= selectedLevel)
+				&& (mStickyHeaderHelper == null || !mStickyHeaderHelper.hasStickyHeaderTranslated(position))) {
 
 			//Collapse others expandable if configured so
 			//Skipped when expanding all is requested
@@ -1269,8 +1233,6 @@ public class FlexibleAdapter<T extends IFlexible>
 			subItemsCount = subItems.size();
 			//Save expanded state
 			expandable.setExpanded(true);
-			//Map all the view types if not done yet
-			//mapViewTypesFrom(subItems);
 
 			//Automatically scroll the current expandable item to show as much children as possible
 			if (scrollOnExpand && !expandAll) {
@@ -1283,7 +1245,7 @@ public class FlexibleAdapter<T extends IFlexible>
 						return true;
 					}
 				});
-				animatorHandler.sendMessageDelayed(Message.obtain(mHandler), 150L);
+				animatorHandler.sendMessageDelayed(Message.obtain(mHandler), !headersSticky ? 150L: 300L);
 			}
 
 			//Expand!
@@ -1554,8 +1516,6 @@ public class FlexibleAdapter<T extends IFlexible>
 		} else {
 			mItems.addAll(items);
 		}
-		//Map all the view types if not done yet
-		//mapViewTypesFrom(items);
 		//Notify range addition
 		notifyItemRangeInserted(position, items.size());
 
@@ -2352,8 +2312,6 @@ public class FlexibleAdapter<T extends IFlexible>
 								for (T subItem : subItems) {
 									if (!subItem.isHidden()) filteredSubItems.add(subItem);
 								}
-								//Map the view types if not done yet
-								//mapViewTypesFrom(filteredSubItems);
 								values.addAll(filteredSubItems);
 								newOriginalPosition += filteredSubItems.size();
 							}
@@ -2732,19 +2690,6 @@ public class FlexibleAdapter<T extends IFlexible>
 	/*-----------------*/
 
 	/**
-	 * Internal mapper to remember and add all ViewTypes for the Items.
-	 *
-	 * @param items list of items to map
-	 */
-	private void mapViewTypesFrom(Iterable<T> items) {
-		if (items != null) {
-			for (T item : items) {
-				mapViewTypeFrom(item);
-			}
-		}
-	}
-
-	/**
 	 * Internal mapper to remember and add all types for the RecyclerView.
 	 *
 	 * @param item the item to map
@@ -2871,14 +2816,18 @@ public class FlexibleAdapter<T extends IFlexible>
 		int lastVisibleItem = ((LinearLayoutManager) mRecyclerView.getLayoutManager()).findLastCompletelyVisibleItemPosition();
 		int itemsToShow = position + subItemsCount - lastVisibleItem;
 		if (DEBUG)
-			Log.v(TAG, "itemsToShow=" + itemsToShow + " firstVisibleItem=" + firstVisibleItem + " lastVisibleItem=" + lastVisibleItem + " RvChildCount=" + mRecyclerView.getChildCount());
+			Log.v(TAG, "autoScroll itemsToShow=" + itemsToShow + " firstVisibleItem=" + firstVisibleItem + " lastVisibleItem=" + lastVisibleItem + " RvChildCount=" + mRecyclerView.getChildCount());
 		if (itemsToShow > 0) {
 			int scrollMax = position - firstVisibleItem;
 			int scrollMin = Math.max(0, position + subItemsCount - lastVisibleItem);
 			int scrollBy = Math.min(scrollMax, scrollMin);
+			if (mRecyclerView.getLayoutManager() instanceof GridLayoutManager) {
+				int spanCount = ((GridLayoutManager) mRecyclerView.getLayoutManager()).getSpanCount();
+				scrollBy = scrollBy % spanCount + spanCount;
+			}
 			int scrollTo = firstVisibleItem + scrollBy;
 			if (DEBUG)
-				Log.v(TAG, "scrollMin=" + scrollMin + " scrollMax=" + scrollMax + " scrollBy=" + scrollBy + " scrollTo=" + scrollTo);
+				Log.v(TAG, "autoScroll scrollMin=" + scrollMin + " scrollMax=" + scrollMax + " scrollBy=" + scrollBy + " scrollTo=" + scrollTo);
 			mRecyclerView.smoothScrollToPosition(scrollTo);
 		} else if (position < firstVisibleItem) {
 			mRecyclerView.smoothScrollToPosition(position);

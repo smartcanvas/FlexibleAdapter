@@ -82,10 +82,15 @@ public class FastScroller extends FrameLayout {
 		setClipChildren(false);
 	}
 
-	public void setRecyclerView(RecyclerView recyclerView) {
+	public void setRecyclerView(final RecyclerView recyclerView) {
 		this.recyclerView = recyclerView;
 		this.recyclerView.addOnScrollListener(onScrollListener);
-		this.layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+		this.recyclerView.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+			@Override
+			public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+				layoutManager = (LinearLayoutManager) FastScroller.this.recyclerView.getLayoutManager();
+			}
+		});
 
 		if (recyclerView.getAdapter() instanceof  BubbleTextCreator)
 			this.bubbleTextCreator = (BubbleTextCreator) recyclerView.getAdapter();
@@ -130,6 +135,7 @@ public class FastScroller extends FrameLayout {
 	 * @param handleResId Drawable resource for the Handle
 	 */
 	public void setViewsToUse(@LayoutRes int layoutResId, @IdRes int bubbleResId, @IdRes int handleResId) {
+		if (bubble != null) return;//Already inflated
 		LayoutInflater inflater = LayoutInflater.from(getContext());
 		inflater.inflate(layoutResId, this, true);
 		bubble = (TextView) findViewById(bubbleResId);
@@ -238,15 +244,16 @@ public class FastScroller extends FrameLayout {
 			else
 				proportion = y / (float) height;
 			int targetPos = getValueInRange(0, itemCount - 1, (int) (proportion * (float) itemCount));
-			String bubbleText = bubbleTextCreator.onCreateBubbleText(targetPos);
 			layoutManager.scrollToPositionWithOffset(targetPos, 0);
-			if (bubble != null)
-			    if (bubbleText != null) {
-                    bubble.setVisibility(View.VISIBLE);
-                } else {
-                    bubble.setVisibility(View.GONE);
-                }
-				bubble.setText(bubbleText);
+			if (bubble != null) {
+				String bubbleText = bubbleTextCreator.onCreateBubbleText(targetPos);
+				if (bubbleText != null) {
+					bubble.setVisibility(View.VISIBLE);
+					bubble.setText(bubbleText);
+				} else {
+					bubble.setVisibility(View.GONE);
+				}
+			}
 		}
 	}
 

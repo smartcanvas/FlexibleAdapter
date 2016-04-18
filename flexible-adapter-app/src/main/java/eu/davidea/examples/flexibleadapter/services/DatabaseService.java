@@ -28,7 +28,7 @@ import eu.davidea.flexibleadapter.items.IFlexible;
 public class DatabaseService {
 
 	private static DatabaseService mInstance;
-	private static final int ITEMS = 90, SUB_ITEMS = 3, HEADERS = 30;
+	private static final int ITEMS = 90, SUB_ITEMS = 6, HEADERS = 30;
 	private static AtomicInteger atomicInteger = new AtomicInteger(0);
 
 	//TODO FOR YOU: Use userLearnedSelection from settings
@@ -51,7 +51,7 @@ public class DatabaseService {
 	/* EXAMPLE DATABASE CREATION */
 	/*---------------------------*/
 
-	public void createOverallItemsDatabase(Resources resources) {
+	public void createOverallDatabase(Resources resources) {
 		mItems.clear();
 		mItems.add(new OverallItem(R.id.nav_animators, resources.getString(R.string.animators))
 				.withDescription(resources.getString(R.string.animators_description))
@@ -60,16 +60,6 @@ public class DatabaseService {
 		mItems.add(new OverallItem(R.id.nav_selection_modes, resources.getString(R.string.selection_modes))
 				.withDescription(resources.getString(R.string.selection_modes_description))
 				.withIcon(resources.getDrawable(R.drawable.ic_select_all_grey600_24dp))
-				.withEnabled(false));
-
-		mItems.add(new OverallItem(R.id.nav_instagram_headers, resources.getString(R.string.instagram_header))
-				.withDescription(resources.getString(R.string.instagram_header_description))
-				.withIcon(resources.getDrawable(R.drawable.ic_instagram_grey600_24dp))
-				.withEnabled(false));
-
-		mItems.add(new OverallItem(R.id.nav_headers_and_sections, resources.getString(R.string.headers_sections))
-				.withDescription(resources.getString(R.string.headers_sections_description))
-				.withIcon(resources.getDrawable(R.drawable.ic_view_headline_grey600_24dp))
 				.withEnabled(false));
 
 		mItems.add(new OverallItem(R.id.nav_expandable, resources.getString(R.string.expandable))
@@ -84,6 +74,21 @@ public class DatabaseService {
 		mItems.add(new OverallItem(R.id.nav_expandable_sections, resources.getString(R.string.expandable_sections))
 				.withDescription(resources.getString(R.string.expandable_sections_description))
 				.withIcon(resources.getDrawable(R.drawable.ic_expandable_grey_600_24dp)));
+
+		mItems.add(new OverallItem(R.id.nav_headers_and_sections, resources.getString(R.string.headers_sections))
+				.withDescription(resources.getString(R.string.headers_sections_description))
+				.withIcon(resources.getDrawable(R.drawable.ic_sections_grey600_24dp))
+				.withEnabled(false));
+
+		mItems.add(new OverallItem(R.id.nav_instagram_headers, resources.getString(R.string.instagram_headers))
+				.withDescription(resources.getString(R.string.instagram_headers_description))
+				.withIcon(resources.getDrawable(R.drawable.ic_instagram_grey600_24dp))
+				.withEnabled(false));
+
+		mItems.add(new OverallItem(R.id.nav_model_holders, resources.getString(R.string.model_holders))
+				.withDescription(resources.getString(R.string.model_holders_description))
+				.withIcon(resources.getDrawable(R.drawable.ic_select_inverse_grey600_24dp))
+				.withEnabled(false));
 	}
 
 	public void createAnimatorsDatabase() {
@@ -198,7 +203,7 @@ public class DatabaseService {
 	/**
 	 * @return Always a copy of the original list.
 	 */
-	public List<AbstractFlexibleItem> getListById() {
+	public List<AbstractFlexibleItem> getDatabaseList() {
 		//Return a copy of the DB: we will perform some tricky code on this list.
 		return new ArrayList<AbstractFlexibleItem>(mItems);
 	}

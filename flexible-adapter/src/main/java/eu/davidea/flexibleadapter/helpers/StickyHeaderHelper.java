@@ -15,6 +15,7 @@
  */
 package eu.davidea.flexibleadapter.helpers;
 
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.OnScrollListener;
@@ -84,6 +85,11 @@ public class StickyHeaderHelper extends OnScrollListener {
 		}
 	}
 
+	public boolean hasStickyHeaderTranslated(int position) {
+		RecyclerView.ViewHolder vh = mRecyclerView.findViewHolderForAdapterPosition(position);
+		return vh != null && (vh.itemView.getX() < 0 || vh.itemView.getY() < 0);
+	}
+
 	private void initStickyHeadersHolder() {
 		//Initialize Holder Layout and show sticky header if exists already
 		mStickyHolderLayout = mAdapter.getStickySectionHeadersHolder();
@@ -133,7 +139,7 @@ public class StickyHeaderHelper extends OnScrollListener {
 			mHeaderPosition = headerPosition;
 			RecyclerView.ViewHolder holder = getHeaderViewHolder(headerPosition);
 			if (mStickyHeaderViewHolder != holder) {
-				if (FlexibleAdapter.DEBUG) Log.v(TAG, "swapHeader newPosition=" + headerPosition);
+				if (FlexibleAdapter.DEBUG) Log.v(TAG, "swapHeader newPosition=" + mHeaderPosition);
 				swapHeader(holder);
 			}
 		} else if (updateHeaderContent && mStickyHeaderViewHolder != null) {
@@ -147,21 +153,31 @@ public class StickyHeaderHelper extends OnScrollListener {
 		if (mStickyHeaderViewHolder == null) return;
 
 		int headerOffsetX = 0, headerOffsetY = 0;
-		//Next potential header is always at position 1
-		final View nextChild = mRecyclerView.getChildAt(1);
-		if (nextChild != null) {
-			int adapterPos = mRecyclerView.getChildAdapterPosition(nextChild);
-			int nextHeaderPosition = getHeaderPosition(adapterPos);
-			if (mHeaderPosition != nextHeaderPosition) {
-				if (getOrientation(mRecyclerView) == LinearLayoutManager.HORIZONTAL) {
-					if (nextChild.getLeft() > 0) {
-						int headerWidth = mStickyHeaderViewHolder.itemView.getMeasuredWidth();
-						headerOffsetX = Math.min(nextChild.getLeft() - headerWidth, 0);
-					}
-				} else {
-					if (nextChild.getTop() > 0) {
-						int headerHeight = mStickyHeaderViewHolder.itemView.getMeasuredHeight();
-						headerOffsetY = Math.min(nextChild.getTop() - headerHeight, 0);
+
+		//If linear Layout, next potential header is always at position 1
+		int nextChildHeaderPosition = 1;
+		if (mRecyclerView.getLayoutManager() instanceof GridLayoutManager) {
+			nextChildHeaderPosition = ((GridLayoutManager) mRecyclerView.getLayoutManager()).getSpanCount();
+		}
+		//Search for the position where the next header item is found and take the new offset
+		for (int i = nextChildHeaderPosition; i > 0; i--) {
+			final View nextChild = mRecyclerView.getChildAt(i);
+			if (nextChild != null) {
+				int adapterPos = mRecyclerView.getChildAdapterPosition(nextChild);
+				int nextHeaderPosition = getHeaderPosition(adapterPos);
+				if (mHeaderPosition != nextHeaderPosition) {
+					if (getOrientation(mRecyclerView) == LinearLayoutManager.HORIZONTAL) {
+						if (nextChild.getLeft() > 0) {
+							int headerWidth = mStickyHeaderViewHolder.itemView.getMeasuredWidth();
+							headerOffsetX = Math.min(nextChild.getLeft() - headerWidth, 0);
+							if (headerOffsetX < 0) break;
+						}
+					} else {
+						if (nextChild.getTop() > 0) {
+							int headerHeight = mStickyHeaderViewHolder.itemView.getMeasuredHeight();
+							headerOffsetY = Math.min(nextChild.getTop() - headerHeight, 0);
+							if (headerOffsetY < 0) break;
+						}
 					}
 				}
 			}
