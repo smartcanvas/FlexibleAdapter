@@ -31,7 +31,11 @@ public class FragmentHeadersSections extends AbstractFragment {
 
 	public static final String TAG = FragmentHeadersSections.class.getSimpleName();
 
+	/**
+	 * Custom implementation of FlexibleAdapter
+	 */
 	private ExampleAdapter mAdapter;
+
 
 	public static FragmentHeadersSections newInstance(int columnCount) {
 		FragmentHeadersSections fragment = new FragmentHeadersSections();
@@ -87,6 +91,8 @@ public class FragmentHeadersSections extends AbstractFragment {
 		mAdapter.setFastScroller((FastScroller) getActivity().findViewById(R.id.fast_scroller),
 				Utils.getColorAccent(getActivity()), (MainActivity) getActivity());
 		mAdapter.setLongPressDragEnabled(true);
+		mAdapter.setSwipeEnabled(true);
+		mAdapter.setUnlinkAllItemsOnRemoveHeaders(true);
 		mAdapter.setDisplayHeadersAtStartUp(true);//Show Headers at startUp!
 		mAdapter.enableStickyHeaders();
 		//Add sample item on the top (HeaderView) (not belongs to the library)
