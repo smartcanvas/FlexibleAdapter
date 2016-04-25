@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import eu.davidea.flexibleadapter.FlexibleAnimatorAdapter;
+import eu.davidea.flexibleadapter.AnimatorAdapter;
 import eu.davidea.flexibleadapter.helpers.ItemTouchHelperCallback;
 import eu.davidea.flexibleadapter.items.IFlexible;
 import eu.davidea.viewholders.FlexibleViewHolder;
@@ -52,7 +52,7 @@ import eu.davidea.viewholders.FlexibleViewHolder;
  * Not avaliable to users. Taking inspiration for some functionalities.
  */
 @SuppressWarnings({"unchecked"})
-abstract class FlexibleAdapterSections extends FlexibleAnimatorAdapter
+abstract class FlexibleAdapterSections extends AnimatorAdapter
 		implements ItemTouchHelperCallback.AdapterCallback {
 
 	private static final String TAG = FlexibleAdapterSections.class.getSimpleName();
@@ -966,10 +966,10 @@ abstract class FlexibleAdapterSections extends FlexibleAnimatorAdapter
 	 */
 	@Override
 	@CallSuper
-	public void onItemSwiped(int position, int direction) {
+	public void onItemSwiped(int position, int direction, int swipeStatus) {
 		// Delegate actions to the user
 		if (mItemSwipeListener != null) {
-			mItemSwipeListener.onItemSwipe(position, direction);
+			mItemSwipeListener.onItemSwipe(position, direction, swipeStatus);
 		}
 	}
 
@@ -1293,7 +1293,7 @@ abstract class FlexibleAdapterSections extends FlexibleAnimatorAdapter
 		 * @param position  the position of the item swiped
 		 * @param direction the direction to which the ViewHolder is swiped
 		 */
-		void onItemSwipe(int position, int direction);
+		void onItemSwipe(int position, int direction, int swipeStatus);
 	}
 
 	/**

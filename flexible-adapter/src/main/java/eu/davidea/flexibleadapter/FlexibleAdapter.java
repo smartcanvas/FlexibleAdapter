@@ -29,6 +29,7 @@ import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -64,15 +65,14 @@ import eu.davidea.viewholders.FlexibleViewHolder;
  * filtering, adding, removing, moving and animating an item.</p>
  * With version 5.0.0, this Adapter supports a set of standard methods for Headers/Sections to
  * expand and collapse an Expandable item, to Drag&Drop and Swipe any item.
- * <p><b>NOTE:</b>This Adapter supports Expandable of Expandable, but selection and restoration
- * don't work well in conjunction of multi level expansion. You should not enable functionalities
- * like: ActionMode, Undo, Drag and CollapseOnExpand in that case. Better to change approach in
- * favor of a better and clearer design/layout: Open the list of the subItem in a new Activity...
- * <br/>Instead, this extra level of expansion is useful in situations where those items are not
- * selectable nor draggable, and information in them are in read only mode or are action buttons.</p>
+ * <p><b>NOTE:</b> This Adapter supports multi level of Expandable. Do not enable functionalities
+ * like: Drag&Drop. Something might not work as expected, so better to change approach in
+ * favor of a clearer design/layout: Open the sub list in a new Activity/Fragment...
+ * <br/>Instead, this extra level of expansion is useful in situations where information is in
+ * read only mode or with action buttons.</p>
  *
  * @author Davide Steduto
- * @see FlexibleAnimatorAdapter
+ * @see AnimatorAdapter
  * @see SelectableAdapter
  * @see IFlexible
  * @see FlexibleViewHolder
@@ -80,15 +80,17 @@ import eu.davidea.viewholders.FlexibleViewHolder;
  * @since 03/05/2015 Created
  * <br/>16/01/2016 Expandable items
  * <br/>24/01/2016 Drag&Drop, Swipe
- * <br/>30/01/2016 Class now extends {@link FlexibleAnimatorAdapter} that extends {@link SelectableAdapter}
+ * <br/>30/01/2016 Class now extends {@link AnimatorAdapter} that extends {@link SelectableAdapter}
  * <br/>02/02/2016 New code reorganization, new item interfaces and full refactoring
  * <br/>08/02/2016 Headers/Sections
  * <br/>10/02/2016 The class is not abstract anymore, it is ready to be used
  * <br/>20/02/2016 Sticky headers
+ * <br/>22/04/2016 Endless Scrolling
+ * <br/>24/04/2016 FULL and PARTIAL Swipe
  */
 @SuppressWarnings({"unused", "Range", "Convert2Diamond", "ConstantConditions", "unchecked"})
 public class FlexibleAdapter<T extends IFlexible>
-		extends FlexibleAnimatorAdapter
+		extends AnimatorAdapter
 		implements ItemTouchHelperCallback.AdapterCallback {
 
 	private static final String TAG = FlexibleAdapter.class.getSimpleName();
@@ -119,6 +121,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	 * <p>You can override this Handler, but you must keep the "What" already used:
 	 * <br/>0 = filterItems delay
 	 * <br/>1 = deleteConfirmed when Undo timeout is over</p>
+	 * <br/>2 = reset flag to load more items</p>
 	 */
 	protected Handler mHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
 		public boolean handleMessage(Message message) {
@@ -130,6 +133,9 @@ public class FlexibleAdapter<T extends IFlexible>
 					OnDeleteCompleteListener listener = (OnDeleteCompleteListener) message.obj;
 					if (listener != null) listener.onDeleteConfirmed();
 					emptyBin();
+					return true;
+				case 2: //onLoadMore
+					resetOnLoadMore();
 					return true;
 			}
 			return false;
@@ -159,9 +165,14 @@ public class FlexibleAdapter<T extends IFlexible>
 			childSelected = false, parentSelected = false;
 
 	/* Drag&Drop and Swipe helpers */
-	private boolean longPressDragEnabled = false, handleDragEnabled = true, swipeEnabled = false;
+	private boolean longPressDragEnabled = false, handleDragEnabled = true, mSwipeEnabled = false;
 	private ItemTouchHelperCallback mItemTouchHelperCallback;
 	private ItemTouchHelper mItemTouchHelper;
+
+	/* EndlessScroll */
+	private int mEndlessScrollThreshold = 1;
+	private boolean mLoading = false;
+	private T mProgressItem;
 
 	/* Listeners */
 	protected OnUpdateListener mUpdateListener;
@@ -170,6 +181,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	protected OnItemMoveListener mItemMoveListener;
 	protected OnItemSwipeListener mItemSwipeListener;
 	protected OnStickyHeaderChangeListener mStickyHeaderChangeListener;
+	protected EndlessScrollListener mEndlessScrollListener;
 
 	/*--------------*/
 	/* CONSTRUCTORS */
@@ -434,7 +446,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	/**
 	 * You can override this method to define your own concept of "Empty". This method is never
 	 * called internally.
-	 * <p>Default value is the result of {@link #getItemCount()}.</p>
+	 * <p>Default value is the result of {@code getItemCount() == 0}.</p>
 	 *
 	 * @return true if the list is empty, false otherwise
 	 * @see #getItemCount()
@@ -568,9 +580,8 @@ public class FlexibleAdapter<T extends IFlexible>
 	public List<IHeader> getHeaderItems() {
 		List<IHeader> headers = new ArrayList<IHeader>();
 		for (T item : mItems) {
-			IHeader header = getHeaderOf(item);
-			if (header != null && !headers.contains(header))
-				headers.add(header);
+			if (isHeader(item))
+				headers.add((IHeader) item);
 		}
 		return headers;
 	}
@@ -730,14 +741,10 @@ public class FlexibleAdapter<T extends IFlexible>
 	 */
 	@NonNull
 	public List<ISectionable> getSectionItems(@NonNull IHeader header) {
-		return getSectionItems(header, false);
-	}
-
-	private List<ISectionable> getSectionItems(@NonNull IHeader header, boolean nextHeader) {
 		List<ISectionable> sectionItems = new ArrayList<ISectionable>();
 		int startPosition = getGlobalPositionOf(header);
 		T item = getItem(++startPosition);
-		while (hasSameHeader(item, header) || (nextHeader && !isHeader(item))) {
+		while (item != null && !isHeader(item)) {
 			sectionItems.add((ISectionable) item);
 			item = getItem(++startPosition);
 		}
@@ -1040,17 +1047,99 @@ public class FlexibleAdapter<T extends IFlexible>
 				item.bindViewHolder(this, holder, position, payloads);
 			}
 		}
+
+		//Endless Scroll
+		onLoadMore(position);
+	}
+
+	/*------------------------*/
+	/* ENDLESS SCROLL METHODS */
+	/*------------------------*/
+
+	/**
+	 * Sets the callback to load more items asynchronously.
+	 *
+	 * @param endlessScrollListener the callback to invoke the asynchronous loading
+	 * @param progressItem          the item representing the progress bar
+	 */
+	public void setEndlessScrollListener(@NonNull EndlessScrollListener endlessScrollListener,
+										 @NonNull T progressItem) {
+		if (endlessScrollListener != null) {
+			mEndlessScrollListener = endlessScrollListener;
+			setEndlessScrollThreshold(mEndlessScrollThreshold);
+			progressItem.setEnabled(false);
+			mProgressItem = progressItem;
+		}
+	}
+
+	/**
+	 * Sets the minimum number of items still to bind to start the automatic loading.
+	 * <p>Default value is 1.</p>
+	 *
+	 * @param thresholdItems minimum number of unbound items to start loading more items
+	 */
+	public void setEndlessScrollThreshold(@IntRange(from = 1) int thresholdItems) {
+		//Increase visible threshold based on number of columns
+		if (mRecyclerView != null) {
+			int spanCount = getSpanCount(mRecyclerView.getLayoutManager());
+			thresholdItems = thresholdItems * spanCount;
+		}
+		mEndlessScrollThreshold = thresholdItems;
+	}
+
+	private void onLoadMore(int position) {
+		if (mEndlessScrollListener != null && getGlobalPositionOf(mProgressItem) < 0
+				&& position >= getItemCount() - mEndlessScrollThreshold) {
+			if (!mLoading) {
+				mLoading = true;
+				mRecyclerView.post(new Runnable() {
+					@Override
+					public void run() {
+						mItems.add(mProgressItem);
+						notifyItemInserted(getItemCount());
+						mEndlessScrollListener.onLoadMore();
+					}
+				});
+			}
+		}
+	}
+
+	/**
+	 * To call when more items are successfully loaded.
+	 *
+	 * @param newItems the list of the new items
+	 */
+	public void onLoadMoreComplete(@Nullable List<T> newItems) {
+		int progressPosition = getGlobalPositionOf(mProgressItem);
+		if (progressPosition >= 0) {
+			mItems.remove(mProgressItem);
+			notifyItemRemoved(progressPosition);
+		}
+		if (newItems != null && newItems.size() > 0) {
+			if (DEBUG) Log.d(TAG, "onLoadMore Complete adding " + newItems.size() + " new Items!");
+			addItems(getItemCount(), newItems);
+			mHandler.sendEmptyMessageDelayed(2, 200L);
+		} else {
+			noMoreLoad();
+		}
+	}
+
+	/**
+	 * Called when no more items are loaded.
+	 */
+	private void noMoreLoad() {
+		if (DEBUG) Log.d(TAG, "onLoadMore noMoreLoad!");
+		notifyItemChanged(getItemCount() - 1, true);
+		mHandler.sendEmptyMessageDelayed(2, 200L);
+	}
+
+	private void resetOnLoadMore() {
+		mLoading = false;
 	}
 
 	/*--------------------*/
 	/* EXPANDABLE METHODS */
 	/*--------------------*/
-
-	//FIXME: Expanded children: find a way to Not animate items from custom ItemAnimator!!!
-	// (ItemAnimators should work in conjunction with AnimatorViewHolder???)
-	//TODO: Customize children animations (don't use animateAdd or animateRemove from custom ItemAnimator)
-	//TODO: Check if multiple types of sub items are already supported (in theory yes)
-	//TODO: Add new feature (Load More)
 
 	/**
 	 * Automatically collapse all previous expanded parents before expand the clicked parent.
@@ -1064,7 +1153,7 @@ public class FlexibleAdapter<T extends IFlexible>
 
 	/**
 	 * Automatically scroll the clicked expandable item to the first visible position.<br/>
-	 * Default disabled.
+	 * Default value is disabled.
 	 * <p>This works ONLY in combination with {@link SmoothScrollLinearLayoutManager}.
 	 * GridLayout is still NOT supported.</p>
 	 *
@@ -1260,7 +1349,7 @@ public class FlexibleAdapter<T extends IFlexible>
 						return true;
 					}
 				});
-				animatorHandler.sendMessageDelayed(Message.obtain(mHandler), !headersSticky ? 150L: 300L);
+				animatorHandler.sendMessageDelayed(Message.obtain(mHandler), !headersSticky ? 150L : 300L);
 			}
 
 			//Expand!
@@ -1472,7 +1561,7 @@ public class FlexibleAdapter<T extends IFlexible>
 		mHandler.postDelayed(new Runnable() {
 			@Override
 			public void run() {
-				if (addItem(position, item) && scrollToPosition) {
+				if (addItem(position, item) && scrollToPosition && mRecyclerView != null) {
 					mRecyclerView.scrollToPosition(
 							Math.min(Math.max(0, position), getItemCount() - 1));
 				}
@@ -1698,7 +1787,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	 * <br/>- To add section to the top, set {@code refHeader} to null;
 	 * <br/>- To add section in the middle, set {@code refHeader} to the previous section;
 	 * <br/>- To add section to the bottom, set {@code refHeader} to your last header/section or
-	 * use the method {@code addItems(itemCount, items)} (header will be automatically shown).</p>
+	 * use the method {@code addItem(position=itemCount, header)}.</p>
 	 *
 	 * @param header    the section header item to add
 	 * @param refHeader optional reference section item
@@ -1948,7 +2037,8 @@ public class FlexibleAdapter<T extends IFlexible>
 				List<ISectionable> sectionableList = getSectionItems((IHeader) item);
 				for (ISectionable sectionable : sectionableList) {
 					sectionable.setHeader(null);
-					if (payload != null) notifyItemChanged(getGlobalPositionOf(sectionable), payload);
+					if (payload != null)
+						notifyItemChanged(getGlobalPositionOf(sectionable), payload);
 				}
 			}
 			//Remove item from internal list
@@ -2089,7 +2179,7 @@ public class FlexibleAdapter<T extends IFlexible>
 			//Restore header linkage
 			if (unlinkOnRemoveHeader && isHeader(restoreInfo.item)) {
 				header = (IHeader) restoreInfo.item;
-				List<ISectionable> items = getSectionItems(header, true);
+				List<ISectionable> items = getSectionItems(header);
 				for (ISectionable sectionable : items) {
 					linkHeaderTo((T) sectionable, header, restoreInfo.payload);
 				}
@@ -2514,7 +2604,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	/**
 	 * Returns whether ItemTouchHelper should start a drag and drop operation if an item is
 	 * long pressed.<p>
-	 * Default value returns false.
+	 * Default value is false.
 	 *
 	 * @return true if ItemTouchHelper should start dragging an item when it is long pressed,
 	 * false otherwise. Default value is false.
@@ -2562,7 +2652,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	/**
 	 * Returns whether ItemTouchHelper should start a swipe operation if a pointer is swiped
 	 * over the View.
-	 * <p>Default value returns false.</p>
+	 * <p>Default value is false.</p>
 	 *
 	 * @return true if ItemTouchHelper should start swiping an item when user swipes a pointer
 	 * over the View, false otherwise. Default value is false.
@@ -2571,16 +2661,34 @@ public class FlexibleAdapter<T extends IFlexible>
 		return mItemTouchHelperCallback != null && mItemTouchHelperCallback.isItemViewSwipeEnabled();
 	}
 
+	public final boolean isFullSwipe() {
+		return mItemTouchHelperCallback != null && mItemTouchHelperCallback.getSwipeMaxMarginPx() > 0;
+	}
+
 	/**
-	 * Enable the Swipe of the items
+	 * Enable the Full Swipe of the items.
 	 * <p>Default value is false.</p>
 	 *
 	 * @param swipeEnabled true to activate, false otherwise
+	 * @see #setSwipeEnabled(boolean, int)
 	 */
 	public final void setSwipeEnabled(boolean swipeEnabled) {
+		setSwipeEnabled(swipeEnabled, 0);
+	}
+
+	/**
+	 * Enable the Partial or Full Swipe of the items depending by the specified margin.
+	 * <p>Default value is false and Full Swipe.</p>
+	 *
+	 * @param swipeEnabled true to activate, false otherwise
+	 * @param dp           max margin for a partial swipe (in dpi)
+	 * @see #setSwipeEnabled(boolean)
+	 */
+	public final void setSwipeEnabled(boolean swipeEnabled, int dp) {
 		initializeItemTouchHelper();
-		this.swipeEnabled = swipeEnabled;
+		mSwipeEnabled = swipeEnabled;
 		mItemTouchHelperCallback.setSwipeEnabled(swipeEnabled);
+		mItemTouchHelperCallback.setSwipeMaxMarginDp(mRecyclerView.getContext(), dp);
 	}
 
 	/**
@@ -2631,7 +2739,7 @@ public class FlexibleAdapter<T extends IFlexible>
 					//Dragging down fromHeader
 					//Auto-linkage all section-items with new header
 					IHeader header = (IHeader) fromItem;
-					List<ISectionable> items = getSectionItems(header, true);
+					List<ISectionable> items = getSectionItems(header);
 					for (ISectionable sectionable : items) {
 						linkHeaderTo((T) sectionable, header, true);
 					}
@@ -2639,7 +2747,7 @@ public class FlexibleAdapter<T extends IFlexible>
 					//Dragging up fromHeader
 					//Auto-linkage all section-items with new header
 					IHeader header = (IHeader) toItem;
-					List<ISectionable> items = getSectionItems(header, true);
+					List<ISectionable> items = getSectionItems(header);
 					for (ISectionable sectionable : items) {
 						linkHeaderTo((T) sectionable, header, true);
 					}
@@ -2703,10 +2811,10 @@ public class FlexibleAdapter<T extends IFlexible>
 	 */
 	@Override
 	@CallSuper
-	public void onItemSwiped(int position, int direction) {
+	public void onItemSwiped(int position, int direction, int swipeStatus) {
 		//Delegate actions to the user
 		if (mItemSwipeListener != null) {
-			mItemSwipeListener.onItemSwipe(position, direction);
+			mItemSwipeListener.onItemSwipe(position, direction, swipeStatus);
 		}
 	}
 
@@ -2857,8 +2965,8 @@ public class FlexibleAdapter<T extends IFlexible>
 			int scrollMax = position - firstVisibleItem;
 			int scrollMin = Math.max(0, position + subItemsCount - lastVisibleItem);
 			int scrollBy = Math.min(scrollMax, scrollMin);
-			if (mRecyclerView.getLayoutManager() instanceof GridLayoutManager) {
-				int spanCount = ((GridLayoutManager) mRecyclerView.getLayoutManager()).getSpanCount();
+			int spanCount = getSpanCount(mRecyclerView.getLayoutManager());
+			if (spanCount > 1) {
 				scrollBy = scrollBy % spanCount + spanCount;
 			}
 			int scrollTo = firstVisibleItem + scrollBy;
@@ -2868,6 +2976,15 @@ public class FlexibleAdapter<T extends IFlexible>
 		} else if (position < firstVisibleItem) {
 			mRecyclerView.smoothScrollToPosition(position);
 		}
+	}
+
+	private static int getSpanCount(RecyclerView.LayoutManager layoutManager) {
+		if (layoutManager instanceof GridLayoutManager) {
+			return ((GridLayoutManager) layoutManager).getSpanCount();
+		} else if (layoutManager instanceof StaggeredGridLayoutManager) {
+			return ((StaggeredGridLayoutManager) layoutManager).getSpanCount();
+		}
+		return 1;
 	}
 
 	private void adjustSelected(int startPosition, int itemCount) {
@@ -3025,16 +3142,25 @@ public class FlexibleAdapter<T extends IFlexible>
 	}
 
 	/**
-	 * @since 26/01/2016
+	 * @since 26/01/2016 Created
+	 * <br/>24/04/2016 Swipe Statuses
 	 */
 	public interface OnItemSwipeListener {
 		/**
 		 * Called when swiping ended its animation and Item is not visible anymore.
 		 *
-		 * @param position  the position of the item swiped
-		 * @param direction the direction to which the ViewHolder is swiped
+		 * @param position    the position of the item swiped
+		 * @param direction   the direction to which the ViewHolder is swiped, one of:
+		 *                    {@link ItemTouchHelper#LEFT},
+		 *                    {@link ItemTouchHelper#RIGHT},
+		 *                    {@link ItemTouchHelper#UP},
+		 *                    {@link ItemTouchHelper#DOWN},
+		 * @param swipeStatus the status of the swipe, one of:
+		 *                    {@link ItemTouchHelperCallback#IDLE},
+		 *                    {@link ItemTouchHelperCallback#PARTIAL_SWIPE},
+		 *                    {@link ItemTouchHelperCallback#FULL_SWIPE}
 		 */
-		void onItemSwipe(int position, int direction);
+		void onItemSwipe(int position, int direction, @ItemTouchHelperCallback.SwipeStatus int swipeStatus);
 	}
 
 	/**
@@ -3047,6 +3173,16 @@ public class FlexibleAdapter<T extends IFlexible>
 		 * @param sectionIndex the position of header
 		 */
 		void onStickyHeaderChange(int sectionIndex);
+	}
+
+	/**
+	 * @since 22/04/2016
+	 */
+	public interface EndlessScrollListener {
+		/**
+		 * Loads more data.
+		 */
+		void onLoadMore();
 	}
 
 	/**

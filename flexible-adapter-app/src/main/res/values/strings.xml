@@ -13,6 +13,8 @@
 	<string name="grid_layout">Grid Layout</string>
 	<string name="reverse_scrolling">Reverse scrolling</string>
 	<string name="forward_scrolling">Forward scrolling</string>
+	<string name="full_swipe">Full Swipe</string>
+	<string name="partial_swipe">Partial swipe</string>
 	<string name="auto_collapse">Auto collapse</string>
 	<string name="keep_expanded">Keep expanded</string>
 	<string name="expand_all">Expand All</string>
@@ -21,6 +23,7 @@
 	<string name="hide_headers">Hide Headers</string>
 	<string name="sticky_headers">Sticky Headers</string>
 	<string name="scroll_headers">Scroll Headers</string>
+	<string name="create_new_item">Create new Item</string>
 	<string name="undo">Undo</string>
 
 	<!-- User Learns Selection -->
@@ -38,13 +41,15 @@
 	<string name="err_no_edit">Nothing to modify</string>
 	<string name="navigation_drawer_open">Open navigation drawer</string>
 	<string name="navigation_drawer_close">Close navigation drawer</string>
+	<string name="select_item_type">"Select Item Type                     "</string>
+	<string name="select_section_reference">"Select Section Reference             "</string>
 
 	<!-- Menu Drawers -->
 	<string name="overall">Overall</string>
 	<!--<string name="overall_description">Examples may have options where available to enable/disable: (1) Filter (2) FastScroller (3) Grid Layout (4) Sticky Headers</string>-->
 
-	<string name="animators">Animators</string>
-	<string name="animators_description">Adapter Animation</string><!-- TODO: in combination with Item Animation -->
+	<string name="endless_scrolling">EndlessScrolling</string>
+	<string name="endless_scrolling_description">EndlessScrolling with Adapter Animation</string><!-- TODO: in combination with Item Animation -->
 
 	<string name="selection_modes">Selection modes</string>
 	<string name="selection_modes_description">IDLE, SINGLE, MULTI</string>
