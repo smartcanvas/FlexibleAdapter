@@ -161,9 +161,9 @@ public class SimpleItem extends AbstractModelItem<SimpleItem.ParentViewHolder>
 			this.mHandleView = (ImageView) view.findViewById(R.id.row_handle);
 			setDragHandleView(mHandleView);
 
-			frontView = view.findViewById(R.id.front_view);
-			rearLeftView = view.findViewById(R.id.rear_left_view);
-			rearRightView = view.findViewById(R.id.rear_right_view);
+			this.frontView = view.findViewById(R.id.front_view);
+			this.rearLeftView = view.findViewById(R.id.rear_left_view);
+			this.rearRightView = view.findViewById(R.id.rear_right_view);
 		}
 
 		@Override
