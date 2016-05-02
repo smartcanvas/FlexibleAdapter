@@ -11,6 +11,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import eu.davidea.flexibleadapter.SelectableAdapter;
 import eu.davidea.samples.flexibleadapter.ExampleAdapter;
 import eu.davidea.samples.flexibleadapter.MainActivity;
 import eu.davidea.samples.flexibleadapter.R;
@@ -84,22 +85,20 @@ public class FragmentExpandableSections extends AbstractFragment {
 		});
 		//mRecyclerView.setItemAnimator(new SlideInRightAnimator());
 		mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(),
-				R.drawable.divider,
-				Utils.dpToPx(getActivity(), 0f)));//Increase to add gap between sections (Works only with LinearLayout!)
+				R.drawable.divider, 0));//Increase to add gap between sections (Works only with LinearLayout!)
 
 		//Add FastScroll to the RecyclerView, after the Adapter has been attached the RecyclerView!!!
 		mAdapter.setFastScroller((FastScroller) getActivity().findViewById(R.id.fast_scroller),
 				Utils.getColorAccent(getActivity()), (MainActivity) getActivity());
 		//Experimenting NEW features (v5.0.0)
 		mAdapter.setLongPressDragEnabled(true);//Enable long press to drag items
-		mAdapter.setSwipeEnabled(true);//Enable swipe items
 		//Show Headers at startUp! (not necessary if Headers are also Expandable)
 		//mAdapter.setDisplayHeadersAtStartUp(true);
 		//Add sample item on the top (not belongs to the library)
 		mAdapter.addUserLearnedSelection(savedInstanceState == null);
 
 		SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout) getView().findViewById(R.id.swipeRefreshLayout);
-		mListener.onFragmentChange(swipeRefreshLayout, mRecyclerView);
+		mListener.onFragmentChange(swipeRefreshLayout, mRecyclerView, SelectableAdapter.MODE_IDLE);
 	}
 
 	@Override

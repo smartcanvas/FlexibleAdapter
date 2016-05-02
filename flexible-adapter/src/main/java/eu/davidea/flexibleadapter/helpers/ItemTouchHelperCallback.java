@@ -33,7 +33,6 @@ import eu.davidea.viewholders.FlexibleViewHolder;
 /**
  * This class is an implementation of {@link Callback} that enables drag & drop
  * and swipe actions. Drag and Swipe events are started depending by its configuration.
- * TODO: http://cjainewbw.blogspot.be/2015/06/design-support-library-recyclerview.html
  *
  * @author Davide Steduto
  * @since 23/01/2016 Created
@@ -43,8 +42,7 @@ public class ItemTouchHelperCallback extends Callback {
 	private static final float ALPHA_FULL = 1.0f;
 
 	private AdapterCallback mItemTouchCallback;
-	private boolean mIsLongPressDragEnabled = false;
-	private boolean mIsSwipeEnabled = false;
+	private boolean mIsLongPressDragEnabled = false, mIsSwipeEnabled = false;
 	private float mSwipeThreshold = 0.5f;
 	private int mSwipeFlags = -1;
 
@@ -161,8 +159,12 @@ public class ItemTouchHelperCallback extends Callback {
 	 */
 	@Override
 	public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
-		//Notify the adapter of the swipe dismissal
-		mItemTouchCallback.onItemSwiped(viewHolder.getAdapterPosition(), direction);
+		//Notify the adapter of the swipe
+		if (viewHolder instanceof ViewHolderCallback) {
+			ViewHolderCallback viewHolderCallback = (ViewHolderCallback) viewHolder;
+			if (viewHolderCallback.getFrontView().getTranslationX() != 0)
+				mItemTouchCallback.onItemSwiped(viewHolder.getAdapterPosition(), direction);
+		}
 	}
 
 	/**

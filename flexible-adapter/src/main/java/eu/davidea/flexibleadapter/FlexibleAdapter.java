@@ -1037,10 +1037,12 @@ public class FlexibleAdapter<T extends IFlexible>
 		//When user scrolls, this line binds the correct selection status
 		holder.itemView.setActivated(isSelected(position));
 		//Bind the correct view elevation
-		if (holder.itemView.isActivated() && holder instanceof FlexibleViewHolder) {
+		if (holder instanceof FlexibleViewHolder) {
 			FlexibleViewHolder flexHolder = (FlexibleViewHolder) holder;
-			if (flexHolder.getActivationElevation() > 0)
+			if (holder.itemView.isActivated() && flexHolder.getActivationElevation() > 0)
 				ViewCompat.setElevation(flexHolder.itemView, flexHolder.getActivationElevation());
+			else if (flexHolder.getActivationElevation() > 0)//Leave unaltered the default elevation
+				ViewCompat.setElevation(flexHolder.itemView, 0);
 		}
 		if (!autoMap) {
 			super.onBindViewHolder(holder, position, payloads);
@@ -2120,6 +2122,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	 * Returns the current configuration to restore selections on Undo.
 	 *
 	 * @return true if selection will be restored, false otherwise
+	 * @see #setRestoreSelectionOnUndo(boolean)
 	 */
 	public boolean isRestoreWithSelection() {
 		return restoreSelection;
@@ -2131,7 +2134,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	 * <p>To use in combination with {@code ActionMode} in order to not disable it.</p>
 	 * Default value is false.
 	 *
-	 * @param restoreSelection true to have restored items still selected, false to empty selections.
+	 * @param restoreSelection true to have restored items still selected, false to empty selections
 	 */
 	public void setRestoreSelectionOnUndo(boolean restoreSelection) {
 		this.restoreSelection = restoreSelection;
@@ -2267,18 +2270,6 @@ public class FlexibleAdapter<T extends IFlexible>
 		}
 		return deletedItems;
 	}
-
-	/**
-	 * @return a list with the global positions of all deleted items
-	 */
-//	public List<Integer> getDeletedPositions() {
-//		List<Integer> deletedItems = new ArrayList<Integer>();
-//		for (RestoreInfo restoreInfo : mRestoreList) {
-//			if (!deletedItems.contains(restoreInfo.refPosition))
-//				deletedItems.add(restoreInfo.refPosition);
-//		}
-//		return deletedItems;
-//	}
 
 	/**
 	 * Retrieves the expandable of the deleted child.
