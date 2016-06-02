@@ -51,7 +51,7 @@ public class UndoHelper extends Snackbar.Callback {
 	public static final int ACTION_UPDATE = 1;
 
 	/**
-	 * @hide
+	 * Annotation interface for Undo actions.
 	 */
 	@IntDef({ACTION_REMOVE, ACTION_UPDATE})
 	@Retention(RetentionPolicy.SOURCE)
@@ -192,6 +192,22 @@ public class UndoHelper extends Snackbar.Callback {
 		//Here, we can notify the callback only in case of permanent deletion
 		if (mAdapter.isPermanentDelete() && mUndoListener != null)
 			mUndoListener.onDeleteConfirmed(mAction);
+	}
+
+	/**
+	 * Basic implementation of {@link OnActionListener} interface.
+	 * <p>Override the methods as your convenience.</p>
+	 */
+	public static class SimpleActionListener implements OnActionListener {
+		@Override
+		public boolean onPreAction() {
+			return false;
+		}
+
+		@Override
+		public void onPostAction() {
+
+		}
 	}
 
 	public interface OnActionListener {
