@@ -56,9 +56,7 @@ import eu.davidea.samples.flexibleadapter.fragments.MessageDialogFragment;
 import eu.davidea.samples.flexibleadapter.fragments.OnFragmentInteractionListener;
 import eu.davidea.samples.flexibleadapter.models.AbstractModelItem;
 import eu.davidea.samples.flexibleadapter.models.ExpandableItem;
-import eu.davidea.samples.flexibleadapter.models.ExpandableLevel1Item;
 import eu.davidea.samples.flexibleadapter.models.HeaderItem;
-import eu.davidea.samples.flexibleadapter.models.InstagramItem;
 import eu.davidea.samples.flexibleadapter.models.OverallItem;
 import eu.davidea.samples.flexibleadapter.models.SimpleItem;
 import eu.davidea.samples.flexibleadapter.models.SubItem;
@@ -203,7 +201,8 @@ public class MainActivity extends AppCompatActivity implements
 		mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
 			@Override
 			public void onRefresh() {
-				mAdapter.updateDataSet(DatabaseService.getInstance().getDatabaseList());
+				//Passing true as parameter we always animate the changes between the old and the new data set
+				mAdapter.updateDataSet(DatabaseService.getInstance().getDatabaseList(), true);
 				mSwipeRefreshLayout.setEnabled(false);
 				mRefreshHandler.sendEmptyMessageDelayed(0, 1000L);
 				mActionModeHelper.destroyActionModeIfCan();
@@ -491,20 +490,16 @@ public class MainActivity extends AppCompatActivity implements
 			return false;
 		}
 
-		//TODO: Add method for ActionModeHelper to know if ActionMode is active or use MODE_MULTI?
-		if (mAdapter.getMode() == SelectableAdapter.MODE_MULTI && mActionModeHelper != null) {
+		//Action on elements are allowed if Mode is IDLE, otherwise selection has priority
+		if (mAdapter.getMode() != SelectableAdapter.MODE_IDLE && mActionModeHelper != null) {
 			return mActionModeHelper.onClick(position);
 		} else {
-			//Notify the active callbacks (ie. the activity, if the fragment is attached to one)
-			// that an item has been selected.
-			if (mAdapter.getItemCount() > 0) {
-				if (!(flexibleItem instanceof ExpandableItem) && !(flexibleItem instanceof IHeader) &&
-						!(flexibleItem instanceof InstagramItem) &&
-						!(flexibleItem instanceof ExpandableLevel1Item)) {
-					//TODO FOR YOU: call your custom Action
-					String title = extractTitleFrom(flexibleItem);
-					EditItemDialog.newInstance(title, position).show(getFragmentManager(), EditItemDialog.TAG);
-				}
+			//Notify the active callbacks or implement a custom action onClick
+			if (!(flexibleItem instanceof ExpandableItem) && flexibleItem instanceof SimpleItem
+					|| flexibleItem instanceof SubItem) {
+				//TODO FOR YOU: call your custom Action
+				String title = extractTitleFrom(flexibleItem);
+				EditItemDialog.newInstance(title, position).show(getFragmentManager(), EditItemDialog.TAG);
 			}
 			return false;
 		}
@@ -524,6 +519,11 @@ public class MainActivity extends AppCompatActivity implements
 //	}
 
 	@Override
+	public void onActionStateChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
+		mSwipeRefreshLayout.setEnabled(actionState == ItemTouchHelper.ACTION_STATE_IDLE);
+	}
+
+	@Override
 	public void onItemMove(int fromPosition, int toPosition) {
 //		IFlexible fromItem = mAdapter.getItem(fromPosition);
 //		IFlexible toItem = mAdapter.getItem(toPosition);
@@ -532,7 +532,7 @@ public class MainActivity extends AppCompatActivity implements
 //			return;
 //		}
 		//FIXME: this doesn't work with all types of items (of course)..... we need to implement some custom logic
-//		DatabaseService.getInstance().swapItem(
+//		DatabaseService.getInstance().swapItems(
 //				DatabaseService.getInstance().getDatabaseList().indexOf(fromItem),
 //				DatabaseService.getInstance().getDatabaseList().indexOf(toItem));
 	}

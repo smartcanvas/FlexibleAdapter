@@ -41,8 +41,8 @@ public class ExampleAdapter extends FlexibleAdapter<AbstractFlexibleItem> {
 	}
 
 	@Override
-	public void updateDataSet(List<AbstractFlexibleItem> items) {
-		super.updateDataSet(items);
+	public void updateDataSet(List<AbstractFlexibleItem> items, boolean animate) {
+		super.updateDataSet(items, animate);
 		//Overwrite the list and fully notify the change
 		//Watch out! The original list must a copy
 		//TODO: We may create calls like removeAll, addAll or refreshList in order to animate changes
@@ -63,7 +63,7 @@ public class ExampleAdapter extends FlexibleAdapter<AbstractFlexibleItem> {
 			final ULSItem item = new ULSItem("ULS");
 			item.setTitle(mContext.getString(R.string.uls_title));
 			item.setSubtitle(mContext.getString(R.string.uls_subtitle));
-			addItemWithDelay(0, item, 1700L, scrollToPosition);
+			addItemWithDelay(0, item, 1500L, scrollToPosition);
 		}
 	}
 
