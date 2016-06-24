@@ -60,7 +60,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	private AnimatorAdapterDataObserver mAnimatorNotifierObserver;
 
 	private enum AnimatorEnum {
-		ALPHA, SLIDE_IN_LEFT, SLIDE_IN_RIGHT, SLIDE_IN_BOTTOM, SCALE
+		ALPHA, SLIDE_IN_LEFT, SLIDE_IN_RIGHT, SLIDE_IN_BOTTOM, SLIDE_IN_TOP, SCALE
 	}
 
 	/**
@@ -122,9 +122,11 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * <p>Default value is 0ms.</p>
 	 *
 	 * @param initialDelay any non negative delay
+	 * @return this AnimatorAdapter, so the call can be chained
 	 */
-	public void setAnimationInitialDelay(long initialDelay) {
+	public AnimatorAdapter setAnimationInitialDelay(long initialDelay) {
 		mInitialDelay = initialDelay;
+		return this;
 	}
 
 	/**
@@ -133,9 +135,11 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * Default value is 100ms.
 	 *
 	 * @param delay any positive delay
+	 * @return this AnimatorAdapter, so the call can be chained
 	 */
-	public void setAnimationDelay(@IntRange(from = 0) long delay) {
+	public AnimatorAdapter setAnimationDelay(@IntRange(from = 0) long delay) {
 		mStepDelay = delay;
+		return this;
 	}
 
 	/**
@@ -143,9 +147,11 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * <p>Default value is 300ms.</p>
 	 *
 	 * @param duration any positive time
+	 * @return this AnimatorAdapter, so the call can be chained
 	 */
-	public void setAnimationDuration(@IntRange(from = 1) long duration) {
+	public AnimatorAdapter setAnimationDuration(@IntRange(from = 1) long duration) {
 		mDuration = duration;
+		return this;
 	}
 
 	/**
@@ -153,9 +159,11 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * <p>Default value is {@link LinearInterpolator}.</p>
 	 *
 	 * @param interpolator any valid non null interpolator
+	 * @return this AnimatorAdapter, so the call can be chained
 	 */
-	public void setAnimationInterpolator(@NonNull Interpolator interpolator) {
+	public AnimatorAdapter setAnimationInterpolator(@NonNull Interpolator interpolator) {
 		mInterpolator = interpolator;
+		return this;
 	}
 
 	/**
@@ -175,9 +183,11 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 *
 	 * @param enabled true to enable item animation, false to disable them all.
 	 * @see #setAnimationOnReverseScrolling(boolean)
+	 * @return this AnimatorAdapter, so the call can be chained
 	 */
-	public void setAnimationOnScrolling(boolean enabled) {
+	public AnimatorAdapter setAnimationOnScrolling(boolean enabled) {
 		shouldAnimate = enabled;
+		return this;
 	}
 
 	public boolean isAnimationOnScrollingEnabled() {
@@ -190,9 +200,11 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 *
 	 * @param enabled false to animate items only forward, true to also reverse animate
 	 * @see #setAnimationOnScrolling(boolean)
+	 * @return this AnimatorAdapter, so the call can be chained
 	 */
-	public void setAnimationOnReverseScrolling(boolean enabled) {
+	public AnimatorAdapter setAnimationOnReverseScrolling(boolean enabled) {
 		isReverseEnabled = enabled;
+		return this;
 	}
 
 	public boolean isAnimationOnReverseScrolling() {
@@ -421,9 +433,9 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 
 	/**
 	 * Item will slide from Left to Right.<br/>
-	 * Ignored if LEFT, RIGHT or BOTTOM animators were already added.
+	 * Ignored if LEFT, RIGHT, TOP or BOTTOM animators were already added.
 	 * <p><b>Note:</b> Only 1 animator of the same compatible type can be added per time.<br/>
-	 * Incompatible with LEFT, BOTTOM animators.<br/>
+	 * Incompatible with LEFT, TOP, BOTTOM animators.<br/>
 	 *
 	 * @param animators user defined list
 	 * @param view      itemView to animate
@@ -433,6 +445,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 			@NonNull List<Animator> animators, @NonNull View view, @FloatRange(from = 0.0, to = 1.0) float percent) {
 		if (animatorsUsed.contains(AnimatorEnum.SLIDE_IN_LEFT) ||
 				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_RIGHT) ||
+				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_TOP) ||
 				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_BOTTOM)) return;
 		animators.add(ObjectAnimator.ofFloat(view, "translationX", -mRecyclerView.getLayoutManager().getWidth() * percent, 0));
 		animatorsUsed.add(AnimatorEnum.SLIDE_IN_LEFT);
@@ -440,9 +453,9 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 
 	/**
 	 * Item will slide from Right to Left.<br/>
-	 * Ignored if LEFT, RIGHT or BOTTOM animators were already added.
+	 * Ignored if LEFT, RIGHT, TOP or BOTTOM animators were already added.
 	 * <p><b>Note:</b> Only 1 animator of the same compatible type can be added per time.<br/>
-	 * Incompatible with RIGHT, BOTTOM animators.<br/>
+	 * Incompatible with RIGHT, TOP, BOTTOM animators.<br/>
 	 *
 	 * @param animators user defined list
 	 * @param view      ItemView to animate
@@ -452,16 +465,36 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 			@NonNull List<Animator> animators, @NonNull View view, @FloatRange(from = 0.0, to = 1.0) float percent) {
 		if (animatorsUsed.contains(AnimatorEnum.SLIDE_IN_LEFT) ||
 				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_RIGHT) ||
+				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_TOP) ||
 				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_BOTTOM)) return;
 		animators.add(ObjectAnimator.ofFloat(view, "translationX", mRecyclerView.getLayoutManager().getWidth() * percent, 0));
 		animatorsUsed.add(AnimatorEnum.SLIDE_IN_RIGHT);
 	}
 
 	/**
-	 * Item will slide from Bottom of the screen to its natural position.<br/>
-	 * Ignored if LEFT, RIGHT or BOTTOM animators were already added.
+	 * Item will slide from Top of the screen to its natural position.<br/>
+	 * Ignored if LEFT, RIGHT, TOP or BOTTOM animators were already added.
 	 * <p><b>Note:</b> Only 1 animator of the same compatible type can be added per time.<br/>
-	 * Incompatible with LEFT, RIGHT, BOTTOM animators.</p>
+	 * Incompatible with LEFT, RIGHT, TOP, BOTTOM animators.</p>
+	 *
+	 * @param animators user defined list
+	 * @param view      itemView to animate
+	 */
+	public void addSlideInFromTopAnimator(
+			@NonNull List<Animator> animators, @NonNull View view) {
+		if (animatorsUsed.contains(AnimatorEnum.SLIDE_IN_LEFT) ||
+				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_RIGHT) ||
+				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_TOP) ||
+				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_BOTTOM)) return;
+		animators.add(ObjectAnimator.ofFloat(view, "translationY", -mRecyclerView.getMeasuredHeight() >> 1, 0));
+		animatorsUsed.add(AnimatorEnum.SLIDE_IN_TOP);
+	}
+
+	/**
+	 * Item will slide from Bottom of the screen to its natural position.<br/>
+	 * Ignored if LEFT, RIGHT, TOP or BOTTOM animators were already added.
+	 * <p><b>Note:</b> Only 1 animator of the same compatible type can be added per time.<br/>
+	 * Incompatible with LEFT, RIGHT, TOP, BOTTOM animators.</p>
 	 *
 	 * @param animators user defined list
 	 * @param view      itemView to animate
@@ -470,6 +503,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 			@NonNull List<Animator> animators, @NonNull View view) {
 		if (animatorsUsed.contains(AnimatorEnum.SLIDE_IN_LEFT) ||
 				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_RIGHT) ||
+				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_TOP) ||
 				animatorsUsed.contains(AnimatorEnum.SLIDE_IN_BOTTOM)) return;
 		animators.add(ObjectAnimator.ofFloat(view, "translationY", mRecyclerView.getMeasuredHeight() >> 1, 0));
 		animatorsUsed.add(AnimatorEnum.SLIDE_IN_BOTTOM);

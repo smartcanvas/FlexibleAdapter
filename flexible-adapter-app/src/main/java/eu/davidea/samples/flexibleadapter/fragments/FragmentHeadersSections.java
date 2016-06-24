@@ -1,10 +1,10 @@
 package eu.davidea.samples.flexibleadapter.fragments;
 
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
@@ -15,9 +15,7 @@ import java.util.List;
 
 import eu.davidea.fastscroller.FastScroller;
 import eu.davidea.flexibleadapter.SelectableAdapter;
-import eu.davidea.flexibleadapter.common.DividerItemDecoration;
 import eu.davidea.flexibleadapter.common.SmoothScrollGridLayoutManager;
-import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager;
 import eu.davidea.flexibleadapter.items.IHeader;
 import eu.davidea.flexibleadapter.items.ISectionable;
 import eu.davidea.flipview.FlipView;
@@ -75,13 +73,18 @@ public class FragmentHeadersSections extends AbstractFragment
 
 	@SuppressWarnings({"ConstantConditions", "NullableProblems"})
 	private void initializeRecyclerView(Bundle savedInstanceState) {
+		//Restore FAB icon
+		FloatingActionButton fab = (FloatingActionButton) getActivity().findViewById(R.id.fab);
+		fab.setImageResource(R.drawable.fab_add);
+
+		//Initialize Adapter and RecyclerView
 		mAdapter = new ExampleAdapter(getActivity());
 		//Experimenting NEW features (v5.0.0)
-		mAdapter.setAnimationOnScrolling(true);
-		mAdapter.setAnimationOnReverseScrolling(true);
-		mAdapter.setRemoveOrphanHeaders(false);
+		mAdapter.setRemoveOrphanHeaders(false)
+				.setAnimationOnScrolling(true)
+				.setAnimationOnReverseScrolling(true);
 		mRecyclerView = (RecyclerView) getView().findViewById(R.id.recycler_view);
-		mRecyclerView.setLayoutManager(new SmoothScrollLinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
+		mRecyclerView.setLayoutManager(createNewLinearLayoutManager());
 		mRecyclerView.setAdapter(mAdapter);
 		mRecyclerView.setHasFixedSize(true); //Size of RV will not change
 		mRecyclerView.setItemAnimator(new DefaultItemAnimator() {
@@ -92,27 +95,36 @@ public class FragmentHeadersSections extends AbstractFragment
 			}
 		});
 		//mRecyclerView.setItemAnimator(new SlideInRightAnimator());
-		mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), R.drawable.divider));
+		//mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), R.drawable.divider));
 
 		//Add FastScroll to the RecyclerView, after the Adapter has been attached the RecyclerView!!!
 		mAdapter.setFastScroller((FastScroller) getActivity().findViewById(R.id.fast_scroller),
 				Utils.getColorAccent(getActivity()), (MainActivity) getActivity());
-		mAdapter.setLongPressDragEnabled(true);
-		mAdapter.setSwipeEnabled(true);
-		mAdapter.setUnlinkAllItemsOnRemoveHeaders(true);
-		mAdapter.setDisplayHeadersAtStartUp(true);//Show Headers at startUp!
-		mAdapter.enableStickyHeaders();
-		//Add sample item on the top (HeaderView) (not belongs to the library)
-		mAdapter.addUserLearnedSelection(savedInstanceState == null);
+		mAdapter.setLongPressDragEnabled(true)
+				.setHandleDragEnabled(true)
+				.setSwipeEnabled(true)
+				.setUnlinkAllItemsOnRemoveHeaders(true)
+				.setDisplayHeadersAtStartUp(true)//Show Headers at startUp!
+				.enableStickyHeaders();
 
 		SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout) getView().findViewById(R.id.swipeRefreshLayout);
 		mListener.onFragmentChange(swipeRefreshLayout, mRecyclerView, SelectableAdapter.MODE_IDLE);
+
+		//Add sample HeaderView items on the top (not belongs to the library)
+		mAdapter.addUserLearnedSelection(savedInstanceState == null);
+		mAdapter.showLayoutInfo(savedInstanceState == null);
 	}
 
 	@Override
-	public void addItem() {
+	public void performFabAction() {
 		BottomSheetDialogFragment bottomSheetDialogFragment = BottomSheetDialogFragment.newInstance(R.layout.bottom_sheet_headers_sections, this);
-		bottomSheetDialogFragment.show( getActivity().getSupportFragmentManager(), BottomSheetDialogFragment.TAG );
+		bottomSheetDialogFragment.show(getActivity().getSupportFragmentManager(), BottomSheetDialogFragment.TAG);
+	}
+
+	@Override
+	public void showNewLayoutInfo(MenuItem item) {
+		super.showNewLayoutInfo(item);
+		mAdapter.showLayoutInfo(true);
 	}
 
 	@Override
@@ -175,6 +187,7 @@ public class FragmentHeadersSections extends AbstractFragment
 				//NOTE: If you use simple integer to identify the ViewType,
 				//here, you should use them and not Layout integers
 				switch (mAdapter.getItemViewType(position)) {
+					case R.layout.recycler_layout_item:
 					case R.layout.recycler_uls_item:
 					case R.layout.recycler_header_item:
 					case R.layout.recycler_expandable_header_item:

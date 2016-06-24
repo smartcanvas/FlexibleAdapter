@@ -2,16 +2,20 @@ package eu.davidea.samples.flexibleadapter.fragments;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.annotation.CallSuper;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import eu.davidea.samples.flexibleadapter.R;
+import eu.davidea.flexibleadapter.common.SmoothScrollGridLayoutManager;
 import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager;
+import eu.davidea.samples.flexibleadapter.R;
 
 /**
  * @author Davide Steduto
@@ -66,23 +70,56 @@ public abstract class AbstractFragment extends Fragment {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		int id = item.getItemId();
 		if (id == R.id.action_list_type) {
-			if (mRecyclerView.getLayoutManager() instanceof GridLayoutManager) {
-				mRecyclerView.setLayoutManager(new SmoothScrollLinearLayoutManager(getActivity()));
+			if (mRecyclerView.getLayoutManager() instanceof StaggeredGridLayoutManager) {
+				mRecyclerView.setLayoutManager(createNewLinearLayoutManager());
 				item.setIcon(R.drawable.ic_view_grid_white_24dp);
-				item.setTitle(R.string.grid_layout);
+				item.setTitle(R.string.grid_layout);//next click
+				showNewLayoutInfo(item);
+			} else if (mRecyclerView.getLayoutManager() instanceof GridLayoutManager) {
+				mRecyclerView.setLayoutManager(createNewStaggeredGridLayoutManager());
+				item.setIcon(R.drawable.ic_view_agenda_white_24dp);
+				item.setTitle(R.string.linear_layout);//next click
+				showNewLayoutInfo(item);
 			} else {
 				mRecyclerView.setLayoutManager(createNewGridLayoutManager());
-				item.setIcon(R.drawable.ic_view_agenda_white_24dp);
-				item.setTitle(R.string.linear_layout);
+				item.setIcon(R.drawable.ic_dashboard_white_24dp);
+				item.setTitle(R.string.staggered_layout);//next click
+				showNewLayoutInfo(item);
 			}
 		}
 		return super.onOptionsItemSelected(item);
 	}
 
-	protected abstract GridLayoutManager createNewGridLayoutManager();
+	protected LinearLayoutManager createNewLinearLayoutManager() {
+		return new SmoothScrollLinearLayoutManager(getActivity());
+	}
 
-	public void addItem() {
+	protected GridLayoutManager createNewGridLayoutManager() {
+		return new SmoothScrollGridLayoutManager(getActivity(), mColumnCount);
+	}
+
+	protected StaggeredGridLayoutManager createNewStaggeredGridLayoutManager() {
+		return new StaggeredGridLayoutManager(mColumnCount, StaggeredGridLayoutManager.VERTICAL);
+	}
+
+	public void performFabAction() {
 		//default implementation does nothing
+	}
+
+	public int getContextMenuResId() {
+		//default Menu Context is returned
+		return R.menu.menu_context;
+	}
+
+	@CallSuper
+	public void showNewLayoutInfo(final MenuItem item) {
+		item.setEnabled(false);
+		mRecyclerView.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				item.setEnabled(true);
+			}
+		}, 2000L);
 	}
 
 }

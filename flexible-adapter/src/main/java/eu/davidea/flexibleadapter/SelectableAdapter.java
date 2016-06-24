@@ -18,7 +18,9 @@ package eu.davidea.flexibleadapter;
 import android.os.Bundle;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.Log;
 import android.view.View;
 
@@ -136,6 +138,22 @@ public abstract class SelectableAdapter extends RecyclerView.Adapter
 	}
 
 	/**
+	 * Helper method to return the number of the columns (span count) of the given LayoutManager.
+	 * <p>All Layouts are supported.</p>
+	 *
+	 * @param layoutManager the layout manager to check
+	 * @return the span count
+	 */
+	public static int getSpanCount(RecyclerView.LayoutManager layoutManager) {
+		if (layoutManager instanceof GridLayoutManager) {
+			return ((GridLayoutManager) layoutManager).getSpanCount();
+		} else if (layoutManager instanceof StaggeredGridLayoutManager) {
+			return ((StaggeredGridLayoutManager) layoutManager).getSpanCount();
+		}
+		return 1;
+	}
+
+	/**
 	 * Sets the mode of the selection:
 	 * <ul>
 	 * <li>{@link #MODE_IDLE} Default. Configures the adapter so that no item can be selected;
@@ -225,7 +243,6 @@ public abstract class SelectableAdapter extends RecyclerView.Adapter
 		if (mMode == MODE_SINGLE)
 			clearSelection();
 
-		//int index = mSelectedPositions.indexOf(position);
 		boolean contains = mSelectedPositions.contains(position);
 		if (contains) {
 			removeSelection(position);
@@ -267,7 +284,6 @@ public abstract class SelectableAdapter extends RecyclerView.Adapter
 		mSelectAll = true;
 		List<Integer> viewTypesToSelect = Arrays.asList(viewTypes);
 		if (DEBUG) Log.v(TAG, "selectAll ViewTypes to include " + viewTypesToSelect);
-		//mSelectedPositions = new ArrayList<Integer>(getItemCount());
 		int positionStart = 0, itemCount = 0;
 		for (int i = 0; i < getItemCount(); i++) {
 			if (isSelectable(i) &&
@@ -295,12 +311,6 @@ public abstract class SelectableAdapter extends RecyclerView.Adapter
 	 * <b>Note 2:</b> This method use java.util.Iterator to avoid java.util.ConcurrentModificationException.
 	 */
 	public void clearSelection() {
-//		Collections.sort(mSelectedPositions, new Comparator<Integer>() {
-//			@Override
-//			public int compare(Integer lhs, Integer rhs) {
-//				return lhs - rhs;
-//			}
-//		});
 		if (DEBUG) Log.v(TAG, "clearSelection " + mSelectedPositions);
 		Iterator<Integer> iterator = mSelectedPositions.iterator();
 		int positionStart = 0, itemCount = 0;
@@ -337,7 +347,7 @@ public abstract class SelectableAdapter extends RecyclerView.Adapter
 
 	/**
 	 * Retrieves the list of selected items.
-	 * <p>The list is sorted.</p>
+	 * <p>The list is a copy and it's sorted.</p>
 	 *
 	 * @return A copied List of selected items ids from the Set
 	 */

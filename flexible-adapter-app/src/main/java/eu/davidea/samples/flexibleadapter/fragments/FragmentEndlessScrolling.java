@@ -5,7 +5,6 @@ import android.os.Handler;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
@@ -20,11 +19,8 @@ import java.util.Random;
 import eu.davidea.fastscroller.FastScroller;
 import eu.davidea.flexibleadapter.FlexibleAdapter;
 import eu.davidea.flexibleadapter.SelectableAdapter;
-import eu.davidea.flexibleadapter.common.DividerItemDecoration;
 import eu.davidea.flexibleadapter.common.SmoothScrollGridLayoutManager;
-import eu.davidea.flexibleadapter.common.SmoothScrollLinearLayoutManager;
 import eu.davidea.flexibleadapter.items.AbstractFlexibleItem;
-import eu.davidea.flexibleadapter.items.IExpandable;
 import eu.davidea.flipview.FlipView;
 import eu.davidea.samples.flexibleadapter.ExampleAdapter;
 import eu.davidea.samples.flexibleadapter.MainActivity;
@@ -79,10 +75,12 @@ public class FragmentEndlessScrolling extends AbstractFragment
 	private void initializeRecyclerView(Bundle savedInstanceState) {
 		mAdapter = new ExampleAdapter(getActivity());
 		//Experimenting NEW features (v5.0.0)
-		mAdapter.setAnimationOnScrolling(true);
-		mAdapter.setAnimationOnReverseScrolling(true);
+		mAdapter.setAutoScrollOnExpand(true)
+				.setHandleDragEnabled(true)
+				.setAnimationOnScrolling(true)
+				.setAnimationOnReverseScrolling(true);
 		mRecyclerView = (RecyclerView) getView().findViewById(R.id.recycler_view);
-		mRecyclerView.setLayoutManager(new SmoothScrollLinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false));
+		mRecyclerView.setLayoutManager(createNewLinearLayoutManager());
 		mRecyclerView.setAdapter(mAdapter);
 		mRecyclerView.setHasFixedSize(true); //Size of RV will not change
 		mRecyclerView.setItemAnimator(new DefaultItemAnimator() {
@@ -93,7 +91,7 @@ public class FragmentEndlessScrolling extends AbstractFragment
 			}
 		});
 		//mRecyclerView.setItemAnimator(new SlideInRightAnimator());
-		mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), R.drawable.divider));
+		//mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), R.drawable.divider));
 
 		//Add FastScroll to the RecyclerView, after the Adapter has been attached the RecyclerView!!!
 		mAdapter.setFastScroller((FastScroller) getActivity().findViewById(R.id.fast_scroller),
@@ -102,9 +100,6 @@ public class FragmentEndlessScrolling extends AbstractFragment
 		mAdapter.setLongPressDragEnabled(true);//Enable long press to drag items
 		mAdapter.setSwipeEnabled(true);//Enable swipe items
 		mAdapter.setDisplayHeadersAtStartUp(true);//Show Headers at startUp!
-		//mAdapter.enableStickyHeaders();//Headers are sticky
-		//Add sample item on the top (not belongs to the library)
-		mAdapter.addUserLearnedSelection(savedInstanceState == null);
 
 		SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout) getView().findViewById(R.id.swipeRefreshLayout);
 		mListener.onFragmentChange(swipeRefreshLayout, mRecyclerView, SelectableAdapter.MODE_IDLE);
@@ -113,14 +108,15 @@ public class FragmentEndlessScrolling extends AbstractFragment
 		mAdapter.setEndlessScrollListener(this, new ProgressItem());
 		mAdapter.setEndlessScrollThreshold(1);//Default=1
 
-//		mAdapter.addItem(mAdapter.getItemCount(), new ProgressItem());
-//		mRecyclerView.addOnScrollListener(new EndlessRecyclerViewScrollListener(mRecyclerView.getLayoutManager()) {
-//			@Override
-//			public void onLoadMore(int page, int totalItemsCount) {
-//				Log.d(TAG, "onLoadMore page=" + page);
-//				FragmentEndlessScrolling.this.onLoadMore();
-//			}
-//		});
+		//Add sample HeaderView items on the top (not belongs to the library)
+		mAdapter.addUserLearnedSelection(savedInstanceState == null);
+		mAdapter.showLayoutInfo(savedInstanceState == null);
+	}
+
+	@Override
+	public void showNewLayoutInfo(MenuItem item) {
+		super.showNewLayoutInfo(item);
+		mAdapter.showLayoutInfo(true);
 	}
 
 	/**
@@ -128,6 +124,13 @@ public class FragmentEndlessScrolling extends AbstractFragment
 	 */
 	@Override
 	public void onLoadMore() {
+		//We don't want load more items when searching into the current Collection!
+		//Alternatively, for a special filter, if we want load more items when filter is active, the
+		// new items that arrive from remote, should be already filtered, before adding them to the Adapter!
+		if (mAdapter.hasSearchText()) {
+			mAdapter.onLoadMoreComplete(null);
+			return;
+		}
 		Log.i(TAG, "onLoadMore invoked!");
 		//Simulating asynchronous call
 		new Handler().postDelayed(new Runnable() {
@@ -143,7 +146,6 @@ public class FragmentEndlessScrolling extends AbstractFragment
 						newItems.add(DatabaseService.newSimpleItem(totalItemsOfType + i, null));
 					} else {
 						newItems.add(DatabaseService.newExpandableItem(totalItemsOfType + i, null));
-						((IExpandable) newItems.get(i - 1)).setExpanded(true);
 					}
 				}
 
@@ -151,6 +153,19 @@ public class FragmentEndlessScrolling extends AbstractFragment
 				//- New items will be added to the end of the list
 				//- When list is null or empty, ProgressItem will be hidden
 				mAdapter.onLoadMoreComplete(newItems);
+				DatabaseService.getInstance().addAll(newItems);
+
+				//Expand all Expandable items: Not Expandable items are automatically skipped/ignored!
+				for (AbstractFlexibleItem item : newItems) {
+					//Simple expansion is performed:
+					// - Automatic scroll is performed
+					//mAdapter.expand(item);
+
+					//Initialization is performed:
+					// - Expanded status is ignored(WARNING: possible subItem duplication)
+					// - Automatic scroll is skipped
+					mAdapter.expand(item, true);
+				}
 
 				//Notify user
 				String message = (newItems.size() > 0 ?
@@ -192,6 +207,7 @@ public class FragmentEndlessScrolling extends AbstractFragment
 				//NOTE: If you use simple integer to identify the ViewType,
 				//here, you should use them and not Layout integers
 				switch (mAdapter.getItemViewType(position)) {
+					case R.layout.recycler_layout_item:
 					case R.layout.recycler_uls_item:
 					case R.layout.progress_item:
 						return mColumnCount;

@@ -19,12 +19,10 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewCompat;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.FrameLayout;
 
 import eu.davidea.flexibleadapter.FlexibleAdapter;
 import eu.davidea.flexibleadapter.SelectableAdapter;
@@ -42,23 +40,25 @@ import eu.davidea.flexibleadapter.items.IFlexible;
  * @since 03/01/2016 Created
  * <br/>23/01/2016 ItemTouch with Drag&Drop, Swipe
  * <br/>26/01/2016 Constructor revisited
- * <br/>04/06/2016 Added StickyHeader flag
+ * <br/>18/06/2016 StickyHeader flag is delegated to the super class (ContentViewHolder)
  */
-public abstract class FlexibleViewHolder extends RecyclerView.ViewHolder
+public abstract class FlexibleViewHolder extends ContentViewHolder
 		implements View.OnClickListener, View.OnLongClickListener,
 		View.OnTouchListener, ItemTouchHelperCallback.ViewHolderCallback {
 
 	private static final String TAG = FlexibleViewHolder.class.getSimpleName();
 
+	//FlexibleAdapter is needed to retrieve listeners and item status
 	protected final FlexibleAdapter mAdapter;
-	private int mBackupPosition = RecyclerView.NO_POSITION;
 
-	/* These 2 fields avoid double tactile feedback triggered by Android and allow to Drag an
-	   item maintaining LongClick events for ActionMode, all at the same time */
-	protected int mActionState = ItemTouchHelper.ACTION_STATE_IDLE;
+	//These 2 fields avoid double tactile feedback triggered by Android during the touch event
+	// (Drag or Swipe), also assure the LongClick event is correctly fired for ActionMode if that
+	// was the user intention.
 	private boolean mLongClickSkipped = false;
 	private boolean alreadySelected = false;
-	private View contentView;
+
+	//State for Dragging & Swiping actions
+	protected int mActionState = ItemTouchHelper.ACTION_STATE_IDLE;
 
 	/*--------------*/
 	/* CONSTRUCTORS */
@@ -84,19 +84,11 @@ public abstract class FlexibleViewHolder extends RecyclerView.ViewHolder
 	 * @param stickyHeader true if the View can be a Sticky Header, false otherwise
 	 */
 	public FlexibleViewHolder(View view, FlexibleAdapter adapter, boolean stickyHeader) {
-		super(stickyHeader ? new FrameLayout(view.getContext()) : view);
+		super(view, adapter, stickyHeader);
 		this.mAdapter = adapter;
-		if (stickyHeader) {
-			itemView.setLayoutParams(mAdapter.getRecyclerView().getLayoutManager()
-					.generateLayoutParams(view.getLayoutParams()));
-			((FrameLayout) itemView).addView(view);//Add View after setLayoutParams
-			contentView = view;
-			contentView.setOnClickListener(this);
-			contentView.setOnLongClickListener(this);
-		} else {
-			itemView.setOnClickListener(this);
-			itemView.setOnLongClickListener(this);
-		}
+
+		getContentView().setOnClickListener(this);
+		getContentView().setOnLongClickListener(this);
 	}
 
 	/*--------------------------------*/
@@ -350,46 +342,6 @@ public abstract class FlexibleViewHolder extends RecyclerView.ViewHolder
 	@Override
 	public View getRearRightView() {
 		return null;
-	}
-
-	/*---------------*/
-	/* STICKY HEADER */
-	/*---------------*/
-
-	public View getContentView() {
-		return contentView != null ? contentView : itemView;
-	}
-
-	public boolean isStickyHeader() {
-		return contentView != null;
-	}
-
-	/**
-	 * Overcomes the situation of returning an unknown position (-1) of ViewHolders created out of
-	 * the LayoutManager (ex. StickyHeaders).
-	 * <p><b>NOTE:</b> Always call this method, instead of {@code getAdapterPosition()}, in case
-	 * of StickyHeaders use case.</p>
-	 *
-	 * @return the Adapter position result of {@link #getAdapterPosition()} OR the backup position
-	 * preset and known, if the previous result was {@link RecyclerView#NO_POSITION}.
-	 * @see #setBackupPosition(int)
-	 */
-	public int getFlexibleAdapterPosition() {
-		int position = getAdapterPosition();
-		if (position == RecyclerView.NO_POSITION) {
-			position = mBackupPosition;
-		}
-		return position;
-	}
-
-	/**
-	 * Restore the Adapter position if the original Adapter position is unknown.
-	 * <p>Called by StickyHeaderHelper to support the clickListeners events.</p>
-	 *
-	 * @param backupPosition the known position of this ViewHolder
-	 */
-	public void setBackupPosition(int backupPosition) {
-		mBackupPosition = backupPosition;
 	}
 
 }

@@ -1,5 +1,6 @@
 package eu.davidea.samples.flexibleadapter.models;
 
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -84,6 +85,11 @@ public class ULSItem extends AbstractModelItem<ULSItem.ExampleViewHolder> {
 					mAdapter.setPermanentDelete(false);
 				}
 			});
+
+			//Support for StaggeredGridLayoutManager
+			if (itemView.getLayoutParams() instanceof StaggeredGridLayoutManager.LayoutParams) {
+				((StaggeredGridLayoutManager.LayoutParams) itemView.getLayoutParams()).setFullSpan(true);
+			}
 		}
 	}
 

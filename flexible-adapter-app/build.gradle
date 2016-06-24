@@ -1,4 +1,6 @@
 apply plugin: "com.android.application"
+apply plugin: 'com.neenbedankt.android-apt'
+apply plugin: 'com.jakewharton.hugo'
 
 android {
 	compileSdkVersion targetSdk
@@ -10,6 +12,8 @@ android {
 		targetSdkVersion targetSdk
 		versionCode libraryCode
 		versionName libraryVersion + libraryDate
+
+		testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
 		applicationVariants.all { variant ->
 			variant.outputs.each { output ->
@@ -29,12 +33,31 @@ android {
 			minifyEnabled false
 		}
 	}
+	testOptions {
+		unitTests.returnDefaultValues = true
+	}
 }
 
 dependencies {
+	//Testing
+	androidTestCompile supportDependencies.annotations
+	androidTestCompile 'com.android.support.test:runner:0.4.1'
+	androidTestCompile 'com.android.support.test:rules:0.4.1'
+	testCompile 'org.robolectric:robolectric:3.1'
+	testCompile 'junit:junit:4.12'
+	testCompile 'org.mockito:mockito-core:2.0.71-beta'
+
+	//FlexibleAdapter
 	compile project (":flexible-adapter")
+
+	//FlipView
 	compile "eu.davidea:flipview:1.1.1"
 
+	//ButterKnife
+	compile 'com.jakewharton:butterknife:8.0.1'
+	apt 'com.jakewharton:butterknife-compiler:8.0.1'
+
+	//Support Libraries
 	compile supportDependencies.appcompat
 	compile supportDependencies.cardview
 	compile (supportDependencies.design) {
@@ -46,10 +69,7 @@ dependencies {
 		exclude module: "support-annotations"
 	}
 
-	//https://github.com/bumptech/glide
+	//Glide (Image Loader)
 	compile 'com.github.bumptech.glide:glide:3.7.0'
 
-//	compile("com.mikepenz:materialize:0.8.7@aar") {
-//		transitive = true
-//	}
 }

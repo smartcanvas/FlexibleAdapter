@@ -12,13 +12,13 @@ import android.widget.Toast;
 import java.io.Serializable;
 import java.util.List;
 
-import eu.davidea.samples.flexibleadapter.R;
 import eu.davidea.flexibleadapter.FlexibleAdapter;
 import eu.davidea.flexibleadapter.items.IExpandable;
 import eu.davidea.flexibleadapter.items.IFilterable;
 import eu.davidea.flexibleadapter.items.ISectionable;
 import eu.davidea.flexibleadapter.utils.Utils;
 import eu.davidea.flipview.FlipView;
+import eu.davidea.samples.flexibleadapter.R;
 import eu.davidea.viewholders.ExpandableViewHolder;
 
 /**
@@ -161,7 +161,12 @@ public class SimpleItem extends AbstractModelItem<SimpleItem.ParentViewHolder>
 				}
 			});
 			this.mHandleView = (ImageView) view.findViewById(R.id.row_handle);
-			setDragHandleView(mHandleView);
+			if (adapter.isHandleDragEnabled()) {
+				this.mHandleView.setVisibility(View.VISIBLE);
+				setDragHandleView(mHandleView);
+			} else {
+				this.mHandleView.setVisibility(View.GONE);
+			}
 
 			this.frontView = view.findViewById(R.id.front_view);
 			this.rearLeftView = view.findViewById(R.id.rear_left_view);
@@ -189,7 +194,7 @@ public class SimpleItem extends AbstractModelItem<SimpleItem.ParentViewHolder>
 
 		@Override
 		public float getActivationElevation() {
-			return Utils.dpToPx(itemView.getContext(), 4f);
+			return eu.davidea.utils.Utils.dpToPx(itemView.getContext(), 4f);
 		}
 
 		@Override

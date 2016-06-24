@@ -21,6 +21,8 @@ import android.content.res.TypedArray;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
+import android.support.annotation.ColorInt;
+import android.support.annotation.NonNull;
 import android.text.Spannable;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.StyleSpan;
@@ -47,6 +49,15 @@ public final class Utils {
 	}
 
 	/**
+	 * API 16
+	 *
+	 * @see VERSION_CODES#JELLY_BEAN
+	 */
+	public static boolean hasJellyBean() {
+		return Build.VERSION.SDK_INT >= VERSION_CODES.JELLY_BEAN;
+	}
+
+	/**
 	 * Sets a spannable text with the accent color (if available) into the passed TextView.
 	 * <p>Internally calls {@link #fetchAccentColor(Context, int)}.</p>
 	 *
@@ -57,11 +68,13 @@ public final class Utils {
 	 * @param defColor     the default color in case accentColor is not found
 	 * @see #fetchAccentColor(Context, int)
 	 */
-	public static void highlightText(Context context, TextView textView,
-									 String originalText, String constraint, int defColor) {
-		Spannable spanText = Spannable.Factory.getInstance().newSpannable(originalText);
-		int i = originalText.toLowerCase(Locale.getDefault()).indexOf(constraint);
+	public static void highlightText(@NonNull Context context, @NonNull TextView textView,
+									 String originalText, String constraint, @ColorInt int defColor) {
+		if (originalText == null) originalText = "";
+		if (constraint == null) constraint = "";
+		int i = originalText.toLowerCase(Locale.getDefault()).indexOf(constraint.toLowerCase(Locale.getDefault()));
 		if (i != -1) {
+			Spannable spanText = Spannable.Factory.getInstance().newSpannable(originalText);
 			spanText.setSpan(new ForegroundColorSpan(fetchAccentColor(context, defColor)), i,
 					i + constraint.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 			spanText.setSpan(new StyleSpan(Typeface.BOLD), i,
@@ -88,7 +101,7 @@ public final class Utils {
 	 * @param defColor value to return if the accentColor cannot be found
 	 */
 	@TargetApi(VERSION_CODES.LOLLIPOP)
-	public static int fetchAccentColor(Context context, int defColor) {
+	public static int fetchAccentColor(Context context, @ColorInt int defColor) {
 		if (colorAccent == INVALID_COLOR) {
 			if (hasLollipop()) {
 				TypedArray androidAttr = context.getTheme().obtainStyledAttributes(new int[]{android.R.attr.colorAccent});
@@ -99,11 +112,6 @@ public final class Utils {
 			}
 		}
 		return colorAccent;
-	}
-
-	public static int dpToPx(Context context, float dp) {
-		final float scale = context.getResources().getDisplayMetrics().density;
-		return Math.round(dp * scale);
 	}
 
 }
