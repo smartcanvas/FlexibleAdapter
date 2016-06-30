@@ -409,12 +409,14 @@ public class FlexibleAdapter<T extends IFlexible>
 			else mItems = new ArrayList<>(items);
 			notifyDataSetChanged();
 		}
-		//Check if Data Set is empty
-		if (mUpdateListener != null && getItemCount() == 0) {
-			mUpdateListener.onUpdateEmptyView(0);
-		} else {
+		//Show headers and expanded items if Data Set not empty
+		if (getItemCount() > 0) {
 			expandItemsAtStartUp();
 			if (headersShown) showAllHeaders();
+		}
+		//Update empty view
+		if (mUpdateListener != null) {
+			mUpdateListener.onUpdateEmptyView(getItemCount());
 		}
 	}
 
@@ -1069,7 +1071,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	 * @return a new ViewHolder that holds a View of the given view type
 	 * @throws IllegalStateException if {@link IFlexible#createViewHolder(FlexibleAdapter, LayoutInflater, ViewGroup)}
 	 *                               is not implemented and if this method is not overridden. Also
-	 *                               it is thrown if ViewType instance has not been correcly mapped.
+	 *                               it is thrown if ViewType instance has not been correctly mapped.
 	 * @see IFlexible#createViewHolder(FlexibleAdapter, LayoutInflater, ViewGroup)
 	 */
 	@Override
@@ -3064,7 +3066,7 @@ public class FlexibleAdapter<T extends IFlexible>
 	}
 
 	/**
-	 * Swaps the elements of list list at indices fromPosition and toPosition and notify the change.
+	 * Swaps the elements of list at indices fromPosition and toPosition and notify the change.
 	 * <p>Selection of swiped elements is automatically updated.</p>
 	 *
 	 * @param fromPosition previous position of the item.
