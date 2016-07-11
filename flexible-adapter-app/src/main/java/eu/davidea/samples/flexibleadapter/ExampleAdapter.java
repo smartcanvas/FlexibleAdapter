@@ -17,15 +17,21 @@ import eu.davidea.samples.flexibleadapter.models.ULSItem;
 import eu.davidea.samples.flexibleadapter.services.DatabaseService;
 
 /**
- * NOTE: AbstractModelItem is for example purpose only. I wanted to have in common
- * some Fields and Layout.
- * You, having different Layout for each item type, would use IFlexible or AbstractFlexibleItem
- * as base item to extend this Adapter.
+ * This is a custom implementation extending FlexibleAdapter. {@code AbstractFlexibleItem} is
+ * used as most common Item for ALL view types.
+ * <p>Items are bound with <b>METHOD A</b> (new way): AutoMap is active, you <u>don't have to</u>
+ * implement {@code getItemViewType, onCreateViewHolder, onBindViewHolder}.</p>
+ * Check {@code OverallAdapter} for <b>METHOD B</b> (classic way).
+ *
+ * @see OverallAdapter
+ * @see AbstractFlexibleItem
  */
 public class ExampleAdapter extends FlexibleAdapter<AbstractFlexibleItem> {
 
 	private static final String TAG = ExampleAdapter.class.getSimpleName();
 
+	public static final int SECTION_VIEW_TYPE = -2;
+	public static final int EXPANDABLE_VIEW_TYPE = -1;
 	public static final int CHILD_VIEW_TYPE = 0;
 	public static final int EXAMPLE_VIEW_TYPE = 1;
 
@@ -107,9 +113,19 @@ public class ExampleAdapter extends FlexibleAdapter<AbstractFlexibleItem> {
 		super.selectAll();
 	}
 
+//	FIXME: This customization makes the header disappear. Why?!?
+//	@Override
+//	public ViewGroup getStickySectionHeadersHolder() {
+//		FrameLayout frameLayout = new FrameLayout(mRecyclerView.getContext());
+//		frameLayout.setLayoutParams(new ViewGroup.LayoutParams(
+//				ViewGroup.LayoutParams.WRAP_CONTENT,
+//				ViewGroup.LayoutParams.WRAP_CONTENT));
+//		return (ViewGroup) mInflater.inflate(R.layout.sticky_header_layout, frameLayout);
+//	}
+
 	/**
 	 * METHOD A - NEW! Via Model objects. In this case you don't need to implement this method!
-	 * METHOD B - You override and implement this method as you prefer.
+	 * METHOD B - You override and implement this method as you prefer (don't call super).
 	 */
 //	@Override
 //	public int getItemViewType(int position) {
@@ -123,7 +139,7 @@ public class ExampleAdapter extends FlexibleAdapter<AbstractFlexibleItem> {
 
 	/**
 	 * METHOD A - NEW! Via Model objects. In this case you don't need to implement this method!
-	 * METHOD B - You override and implement this method as you prefer.
+	 * METHOD B - You override and implement this method as you prefer (don't call super).
 	 */
 //	@Override
 //	public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -148,7 +164,7 @@ public class ExampleAdapter extends FlexibleAdapter<AbstractFlexibleItem> {
 
 	/**
 	 * METHOD A - NEW! Via Model objects. In this case you don't need to implement this method!
-	 * METHOD B - You override and implement this method as you prefer.
+	 * METHOD B - You override and implement this method as you prefer (don't call super).
 	 */
 //	@Override
 //	public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {

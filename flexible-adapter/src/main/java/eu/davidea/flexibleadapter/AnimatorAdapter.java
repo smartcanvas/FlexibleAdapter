@@ -84,7 +84,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	private EnumSet<AnimatorEnum> animatorsUsed = EnumSet.noneOf(AnimatorEnum.class);
 
 	private boolean isReverseEnabled = false, shouldAnimate = true,
-			onlyEntryAnimation = false, isFastScroll = false, isInitialize = false;
+			onlyEntryAnimation = false, isFastScroll = false, animateFromObserver = false;
 
 	private long mInitialDelay = 0L,
 			mStepDelay = 100L,
@@ -96,6 +96,8 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 
 	/**
 	 * Simple Constructor for Animator Adapter.
+	 *
+	 * @since 5.0.0-b1
 	 */
 	public AnimatorAdapter() {
 		super();
@@ -110,11 +112,12 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	/*-----------------------*/
 
 	/**
-	 * @param initialize true to notify this Adapter that initialization is started and so
-	 *                   animate items, false to inform that initialization is complete
+	 * @param animate true to notify this Adapter that initialization is started and so
+	 *                animate items, false to inform that the operation is complete
+	 * @since 5.0.0-b6
 	 */
-	void setInitialize(boolean initialize) {
-		isInitialize = initialize;
+	void setAnimate(boolean animate) {
+		this.animateFromObserver = animate;
 	}
 
 	/**
@@ -123,6 +126,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 *
 	 * @param initialDelay any non negative delay
 	 * @return this AnimatorAdapter, so the call can be chained
+	 * @since 5.0.0-b1
 	 */
 	public AnimatorAdapter setAnimationInitialDelay(long initialDelay) {
 		mInitialDelay = initialDelay;
@@ -136,6 +140,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 *
 	 * @param delay any positive delay
 	 * @return this AnimatorAdapter, so the call can be chained
+	 * @since 5.0.0-b1
 	 */
 	public AnimatorAdapter setAnimationDelay(@IntRange(from = 0) long delay) {
 		mStepDelay = delay;
@@ -148,6 +153,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 *
 	 * @param duration any positive time
 	 * @return this AnimatorAdapter, so the call can be chained
+	 * @since 5.0.0-b1
 	 */
 	public AnimatorAdapter setAnimationDuration(@IntRange(from = 1) long duration) {
 		mDuration = duration;
@@ -171,9 +177,11 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * <p>Default value is 0 (1st position).</p>
 	 *
 	 * @param start non negative minimum position to start animation.
+	 * @since 5.0.0-b1
 	 */
-	public void setAnimationStartPosition(@IntRange(from = 0) int start) {
+	public AnimatorAdapter setAnimationStartPosition(@IntRange(from = 0) int start) {
 		mLastAnimatedPosition = start;
+		return this;
 	}
 
 	/**
@@ -184,6 +192,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * @param enabled true to enable item animation, false to disable them all.
 	 * @return this AnimatorAdapter, so the call can be chained
 	 * @see #setAnimationOnReverseScrolling(boolean)
+	 * @since 5.0.0-b1
 	 */
 	public AnimatorAdapter setAnimationOnScrolling(boolean enabled) {
 		shouldAnimate = enabled;
@@ -201,12 +210,17 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * @param enabled false to animate items only forward, true to also reverse animate
 	 * @return this AnimatorAdapter, so the call can be chained
 	 * @see #setAnimationOnScrolling(boolean)
+	 * @since 5.0.0-b1
 	 */
 	public AnimatorAdapter setAnimationOnReverseScrolling(boolean enabled) {
 		isReverseEnabled = enabled;
 		return this;
 	}
 
+	/**
+	 * @return true if items are animated also on reverse scrolling, false only forward
+	 * @since 5.0.0-b1
+	 */
 	public boolean isAnimationOnReverseScrolling() {
 		return isReverseEnabled;
 	}
@@ -226,12 +240,20 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	}
 
 	/**
+	 * @return true if the scrolling animation will occur only at startup until the screen is
+	 * filled with the items, false animation will be performed when scrolling too.
 	 * @since 5.0.0-b8
 	 */
 	public boolean isOnlyEntryAnimation() {
 		return onlyEntryAnimation;
 	}
 
+	/**
+	 * Triggered by the FastScroller when handle is touched
+	 *
+	 * @param scrolling boolean to indicate that the handle is being fast scrolled
+	 * @since 5.0.0-b1
+	 */
 	@Override
 	public void onFastScrollerStateChange(boolean scrolling) {
 		super.onFastScrollerStateChange(scrolling);
@@ -258,6 +280,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * @return The list of animators to animate all together.
 	 * @see #animateView(View, int, boolean)
 	 * @see #getItemViewType(int)
+	 * @since 5.0.0-b1
 	 */
 	public List<Animator> getAnimators(View itemView, int position, boolean isSelected) {
 		return new ArrayList<Animator>();
@@ -274,6 +297,8 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 
 	/**
 	 * Animates the view based on the custom animator list built with {@link #getAnimators(View, int, boolean)}.
+	 *
+	 * @since 5.0.0-b1
 	 */
 	public final void animateView(final View itemView, int position, boolean isSelected) {
 		//FIXME: first completed visible item on rotation gets high delay
@@ -449,6 +474,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * @param animators user defined list
 	 * @param view      itemView to animate
 	 * @param alphaFrom starting alpha value
+	 * @since 5.0.0-b1
 	 */
 	private void addAlphaAnimator(
 			@NonNull List<Animator> animators, @NonNull View view, @FloatRange(from = 0.0, to = 1.0) float alphaFrom) {
@@ -466,6 +492,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * @param animators user defined list
 	 * @param view      itemView to animate
 	 * @param percent   any % multiplier (between 0 and 1) of the LayoutManager Width
+	 * @since 5.0.0-b1
 	 */
 	public void addSlideInFromLeftAnimator(
 			@NonNull List<Animator> animators, @NonNull View view, @FloatRange(from = 0.0, to = 1.0) float percent) {
@@ -486,6 +513,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * @param animators user defined list
 	 * @param view      ItemView to animate
 	 * @param percent   Any % multiplier (between 0 and 1) of the LayoutManager Width
+	 * @since 5.0.0-b1
 	 */
 	public void addSlideInFromRightAnimator(
 			@NonNull List<Animator> animators, @NonNull View view, @FloatRange(from = 0.0, to = 1.0) float percent) {
@@ -505,6 +533,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 *
 	 * @param animators user defined list
 	 * @param view      itemView to animate
+	 * @since 5.0.0-b7
 	 */
 	public void addSlideInFromTopAnimator(
 			@NonNull List<Animator> animators, @NonNull View view) {
@@ -524,6 +553,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 *
 	 * @param animators user defined list
 	 * @param view      itemView to animate
+	 * @since 5.0.0-b1
 	 */
 	public void addSlideInFromBottomAnimator(
 			@NonNull List<Animator> animators, @NonNull View view) {
@@ -544,6 +574,7 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * @param animators user defined list
 	 * @param view      itemView to animate
 	 * @param scaleFrom initial scale value
+	 * @since 5.0.0-b1
 	 */
 	public void addScaleInAnimator(
 			@NonNull List<Animator> animators, @NonNull View view, @FloatRange(from = 0.0, to = 1.0) float scaleFrom) {
@@ -563,17 +594,17 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 	 * <p>Also, some items at the edge, are rebounded by Android and should not be animated.</p>
 	 */
 	private class AnimatorAdapterDataObserver extends RecyclerView.AdapterDataObserver {
-		private boolean isNotified;
+		private boolean notified;
 		private Handler mAnimatorHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
 			public boolean handleMessage(Message message) {
 				if (DEBUG) Log.v(TAG, "Clear notified for binding Animations");
-				isNotified = false;
+				notified = false;
 				return true;
 			}
 		});
 
 		public boolean isPositionNotified() {
-			return isNotified;
+			return notified;
 		}
 
 		public void clearNotified() {
@@ -582,7 +613,12 @@ public abstract class AnimatorAdapter extends SelectableAdapter {
 		}
 
 		private void markNotified() {
-			isNotified = !isInitialize;
+			notified = !animateFromObserver;
+		}
+
+		@Override
+		public void onChanged() {
+			markNotified();
 		}
 
 		@Override
